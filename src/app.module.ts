@@ -1,7 +1,7 @@
 // src/app.module.ts
 
 // --- NestJS Core & Platform ---
-import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 
 // --- Infrastructure & Core Modules ---
@@ -96,7 +96,7 @@ import { SupportTicketsModule } from './support-tickets/support-tickets.module';
         store: redisStore,
         host: config.get('REDIS_HOST'),
         port: config.get('REDIS_PORT'),
-        ttl: 60 * 3600, // Cache TTL of 5 minutes
+        ttl: 60 * 5, // Cache TTL of 5 minutes
       }),
     }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
@@ -170,6 +170,7 @@ import { SupportTicketsModule } from './support-tickets/support-tickets.module';
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     // Apply the helmet middleware to all routes for setting security-related HTTP headers
-    consumer.apply(helmet()).forRoutes('*');
+    // The syntax '*' is deprecated. Use '/*' to apply middleware to all routes.
+    consumer.apply(helmet()).forRoutes({ path: '/*', method: RequestMethod.ALL });
   }
 }
