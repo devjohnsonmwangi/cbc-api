@@ -7,6 +7,7 @@ import { pgTable, pgEnum, serial, varchar, timestamp, integer, decimal, text, in
 //                   Enums
 // ============================================
 
+export const genderEnum = pgEnum("gender", ['male', 'female', 'other']);
 export const schoolRoleEnum = pgEnum("school_role", ['super_admin', 'school_admin', 'dos', 'teacher', 'student', 'parent', 'accountant', 'librarian', 'kitchen_staff', 'groundsman', 'support_staff', 'board_member']);
 export const enrollmentStatusEnum = pgEnum("enrollment_status", ['active', 'graduated', 'withdrawn', 'suspended']);
 export const paymentStatusEnum = pgEnum("payment_status", ["pending", "paid", "partially_paid", "failed", "refunded"]);
@@ -78,7 +79,7 @@ export const platformPaymentTable = pgTable("platformPaymentTable", {
   payment_amount: decimal("payment_amount", { precision: 10, scale: 2 }).notNull(),
   payment_gateway: paymentGatewayEnum("payment_gateway").notNull(),
   transaction_id: varchar("transaction_id").unique(),
-  receipt_url: varchar("receipt_url", { length: 1024 }), // <-- FIELD ADDED
+  receipt_url: varchar("receipt_url", { length: 1024 }),
   payment_date: timestamp("payment_date", { withTimezone: true }).defaultNow(),
 });
 
@@ -187,7 +188,7 @@ export const studentTable = pgTable("studentTable", {
     admission_number: varchar("admission_number", { length: 50 }).notNull(),
     upi: varchar("upi", { length: 50 }).unique(),
     date_of_birth: timestamp("date_of_birth", { mode: 'date' }),
-    gender: pgEnum("gender", ['male', 'female', 'other'])('gender'),
+    gender: genderEnum('gender'),
     school_id: integer("school_id").notNull().references(() => schoolTable.school_id, { onDelete: "cascade" }),
     created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
@@ -316,7 +317,9 @@ export const studentContentProgressTable = pgTable("studentContentProgressTable"
     content_id: integer("content_id").notNull().references(() => lessonContentTable.content_id, {onDelete: 'cascade'}),
     is_completed: boolean("is_completed").default(false).notNull(),
     completed_at: timestamp("completed_at", {withTimezone: true}),
-}, (table) => ({ pk: primaryKey({ columns: [table.student_id, table.content_id] }) }));
+}, (table) => ({ 
+    studentContentUnique: uniqueIndex("student_content_unique_idx").on(table.student_id, table.content_id)
+}));
 
 export const assignmentTable = pgTable("assignmentTable", {
     assignment_id: serial("assignment_id").primaryKey(),
@@ -550,7 +553,7 @@ export const paymentTable = pgTable("paymentTable", {
   payment_gateway: paymentGatewayEnum("payment_gateway").notNull(),
   transaction_id: varchar("transaction_id").unique(),
   checkout_request_id: varchar("checkout_request_id"),
-  receipt_url: varchar("receipt_url", { length: 1024 }), // <-- FIELD ADDED
+  receipt_url: varchar("receipt_url", { length: 1024 }),
   payment_date: timestamp("payment_date", { withTimezone: true }).defaultNow(),
 });
 

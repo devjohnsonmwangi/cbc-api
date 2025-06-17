@@ -3,3 +3,4 @@ onlyBuiltDependencies:
   - '@scarf/scarf'
   - esbuild
   - nestjs-pino
+  - puppeteer

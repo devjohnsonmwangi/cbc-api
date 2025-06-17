@@ -2,9 +2,9 @@
   "name": "school-management-api",
   "version": "1.0.0",
   "description": "API for CBC-first School Management System",
-  "author": "Your Name/Company",
+  "author": "eng johnson",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "LICENSED",
   "scripts": {
     "build": "nest build -p tsconfig.build.json",
     "start": "nest start",
