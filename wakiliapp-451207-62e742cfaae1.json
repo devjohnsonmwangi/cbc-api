@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "wakiliapp-451207",
+  "private_key_id": "62e742cfaae1ac62bafc0a60f944f1dfbbcd1df2",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQCxvtQ4cOVox63X\npXpQbaEOPrvtOb43lyZ3GzLZygOUzcA4G/0HRZBbjrvtXhA9Edqk4PAZAyoIEe38\nf06EibkMGitK+HMPn2inF+W2jkZJU9kyud8zCOR5j42efj30Qzlj89CCmjoBHbL9\nXngCSRq1qOtRGUnHVCb4MlW+/hYIJHrHhnRJ+yEjSBOLJ3Nwj9bd3Wkhen8SO82J\nNdDu+bp+CAiBax8XYCNLy15RAeq2of2UXPI6xlGRzUoBjV5ryHhOIjjnt3EffYlf\n06bkGm/86C9pLJXJ7B4LBnurd/NAiNRADpa8yHBRHdbkncSYHL63H6BroWnx4Od1\nKJ+wistrAgMBAAECggEAIkdaKDRlmcqAlUkdiKtL1zJ0DbEIJTJqQagmK2hRPn5b\npraHGsLory+cwI9WdGCgGRIkW76HeZzzl7F5lAf3fwUA+mllz0p/5VGvhIB1v6iD\nB8xe5jm9zk/IERvpmNTqGYOo37ccnqB6p3BzloVAuG4GS9KjruRky5LxhG7+Er2b\nF59BVw1oDVMWmIpX9B+UxyRVdJPfDl16uIEW9ffWRGSJ4mJxRoG3kupN0iShDsYL\ncsurM0Kx1iU7HZr2VtirkdHWpn6bvr2/KqpCIjNcQHO7etqNWm97goV6VL8OZNVo\nyzD42DZ03AI7qrJsAK+IEzBgUMGFTLehuwMvck4vaQKBgQD31p5/s9+L2Qz/9G7X\nZUBUT3f5cCMfvZ4gcBZk/z8o0A6Ts5iEFeYlrR3tMA+vvmw+ldHgO+NxWpSe/1t+\n9xPHeHBYwTJY2Lc7VpAWpVHyrfRxA2QAym2KbUIz4LPEuHjJ5yAsxDnT5wH1ELGF\n6/64WlzW2Nkr2GJ0xldk/p893wKBgQC3mUwTU61f9vC5DrYrQZUgq6mAHwOlh10P\nzMlPJzsfDZ8S6g0br3HjHSFn4irmLMoMBsOpheLqFUC0L/LhtUHwZ4+3boAGuo+o\nyhnXvDsu3ZD2bj/WgI+nCl9+5paqnUsr8Bjtj/nB2ytNdovrUmC6iL6/GVaCzIb3\nVquWLQQL9QKBgQDgHLxhIEfSz2iY//FHZ/DfDKmh70xjxHT8Qj+N/t6fSl0UJUCS\nmLbwdPZt6JsWwexiP9p0mdNXSqDAkouraUQCiZ+WMsYTX4155BIR2FcdSz6S/4zr\nxiF+HsTR4qzNBD993DnVIXBldSzo7bqKLti83kG7qoXfxyFpFX4r/rADIwKBgQCm\nmjcMeqwjHuRGKXFpQzPd16gSGRKoDHOION6cMw9VGHk3IqgObWA9JVwA9pzTDeWy\nkBjRJitJG0wBtlkCNAbH7lHdtCn88SIXmn1k5OwXlPtMg7LuJO82NxV9BCXIYL+r\n+U3FlRagsQ9UVbSWL8SSwC/HHWkBfDMlEsLVnbfEWQKBgQDJEF1hTWtNv3TRFUPg\n42RgY6wKBqsZN90oik1bemGV49Wa9QQYYwMaI/mxuXuHKkHNyQqu2SwGcfAbfGFQ\n28dwGacQVjme2qCYBUTSe0h33LZEq0zgAOTcyJF8noFwdOBFC513yp/+mCTOcb7b\naxY/fCky79gtwLOCLshmAlQ+2g==\n-----END PRIVATE KEY-----\n",
+  "client_email": "johnson@wakiliapp-451207.iam.gserviceaccount.com",
+  "client_id": "104937785571508843917",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/johnson%40wakiliapp-451207.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

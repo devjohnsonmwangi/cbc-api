@@ -1,0 +1,17 @@
+# Ignore Git history
+.git
+.gitignore
+
+# Ignore local environment files (these should be injected, not built-in)
+.env
+.env.*
+
+# Ignore containerization files
+Dockerfile
+docker-compose.yml
+
+# Ignore development artifacts
+node_modules
+dist
+coverage
+*.log

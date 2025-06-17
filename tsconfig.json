@@ -1,0 +1,54 @@
+{
+  "compilerOptions": {
+    /* --- Core Type-Checking --- */
+    "target": "ES2022",
+    "module": "CommonJS",
+    "lib": ["ES2022"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true, // Enables all strict type-checking options
+    "noImplicitAny": true, // Raise error on expressions and declarations with an implied 'any' type.
+    "strictNullChecks": true, // In strict null checking mode, the `null` and `undefined` values are not in the domain of every type.
+    "strictFunctionTypes": true, // Disable bivariant parameter checking for function types.
+    "strictBindCallApply": true, // Enable stricter checking of the `bind`, `call`, and `apply` methods on functions.
+    "strictPropertyInitialization": false, // Handled by NestJS DI
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+
+    /* --- Module Resolution --- */
+    "moduleResolution": "node",
+    "baseUrl": "./", // This must be specified if "paths" is.
+    "paths": {
+      // Path aliases for clean, absolute imports
+      "@/*": ["src/*"],
+      "@/auth/*": ["src/auth/*"],
+      "@/core/*": ["src/core/*"],
+      "@/drizzle/*": ["src/drizzle/*"],
+      "@/shared/*": ["src/shared/*"]
+    },
+    "types": ["node", "jest"],
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true, // Allow default imports from modules with no default export.
+
+    /* --- Emit --- */
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+
+    /* --- Project --- */
+    "incremental": true, // Enable incremental compilation
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # 1. The NestJS API Service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: school_api
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env # Load environment variables from the .env file
+    depends_on:
+      - db
+      - redis
+    networks:
+      - school_network
+
+  # 2. The PostgreSQL Database Service
+  db:
+    image: postgres:15-alpine
+    container_name: school_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Persist database data
+    ports:
+      - "5432:5432" # Expose db port to host for debugging/connecting with a GUI client
+    networks:
+      - school_network
+
+  # 3. The Redis Caching Service
+  redis:
+    image: redis:7-alpine
+    container_name: school_cache
+    volumes:
+      - redis_data:/data # Persist cache data
+    networks:
+      - school_network
+
+networks:
+  school_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WAKILI Application API</title>
+    <style>
+      /* Define color variables */
+      :root {
+        --app-bg-color: #f5f5f5;
+        --primary-color: #4caf50;
+        --secondary-color: #f44336;
+        --font-family: Arial, sans-serif;
+      }
+
+      body {
+        font-family: var(--font-family);
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        background-color: var(--app-bg-color);
+      }
+
+      header {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 1rem;
+        text-align: center;
+      }
+
+      header h1 {
+        margin: 0;
+      }
+
+      nav ul {
+        list-style: none;
+        padding: 0;
+      }
+
+      nav ul li {
+        display: inline;
+        margin: 0 1rem;
+      }
+
+      nav ul li a {
+        color: white;
+        text-decoration: none;
+        font-weight: bold;
+      }
+
+      main {
+        padding: 2rem;
+      }
+
+      section {
+        background-color: white;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      section h2 {
+        margin-top: 0;
+        color: var(--primary-color);
+      }
+
+      code {
+        background-color: var(--app-bg-color);
+        padding: 2px 5px;
+        border-radius: 3px;
+        color: var(--secondary-color);
+        font-weight: bold;
+      }
+
+      footer {
+        text-align: center;
+        padding: 1rem;
+        background-color: var(--primary-color);
+        color: white;
+        position: relative;
+        width: 100%;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>WAKILI Application API</h1>
+    </header>
+    <main>
+      <section>
+        <h2>About the API</h2>
+        <p>
+          Welcome to the WAKILI Application API. This API allows
+          you to interact with our legal services platform, including user
+          registration, login, browsing available services, and appointments.
+        </p>
+        <p>
+          Our API provides secure access to a range of legal resources
+          and services, allowing clients to book appointments, manage cases,
+          and make payments seamlessly.
+        </p>
+      </section>
+
+      <section>
+        <h2>Key Features</h2>
+        <ul>
+          <li>Secure authentication with JWT tokens</li>
+          <li>Access to a database of legal cases and services</li>
+          <li>Ability to schedule and manage appointments</li>
+          <li>Integrated payment processing for legal services</li>
+          <li>Real-time case tracking and updates</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Authentication</h2>
+        <p>
+          To access protected endpoints, users must authenticate using
+          JWT tokens. Upon successful login, the API will return a token
+          that must be included in all subsequent requests.
+        </p>
+        <p>Example request header:</p>
+        <code>Authorization: Bearer YOUR_ACCESS_TOKEN</code>
+      </section>
+
+      <section>
+        <h2>API Endpoints</h2>
+        <ul>
+          <li><code>POST /register</code>: Register a new user</li>
+          <li><code>POST /login</code>: Login as an existing user</li>
+          <li><code>GET /services</code>: Retrieve a list of legal services</li>
+          <li><code>POST /appointment</code>: Create a new appointment</li>
+          <li><code>GET /appointments</code>: View user appointments</li>
+          <li><code>GET /cases</code>: Retrieve user cases</li>
+          <li><code>POST /payments</code>: Process a payment</li>
+          <li><code>GET /profile</code>: Retrieve user profile details</li>
+          <li><code>PATCH /profile</code>: Update user profile information</li>
+          <li><code>DELETE /appointment/:id</code>: Cancel an appointment</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Contact Us</h2>
+        <p>
+          If you have any questions or need assistance with the API, please
+          contact our support team at
+          <a href="mailto:support@wakiliapplication.com">support@wakiliapplication.com</a>
+          or follow us on Twitter <strong>@wakiliapplication</strong>.
+        </p>
+      </section>
+    </main>
+    <footer>
+      <p>&copy; <span id="year"></span> WAKILI Application. All rights reserved.</p>
+    </footer>
+
+    <script>
+      document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
+  </body>
+</html>
