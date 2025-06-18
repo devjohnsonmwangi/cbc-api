@@ -22,15 +22,15 @@ import { HealthModule } from './health/health.module';
 
 // --- Guards & Authentication ---
 import { AuthModule } from './auth/auth.module';
-import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { AuthGuard } from './auth/guards/access-token.guard.ts';
 
 // --- DOMAIN MODULES (Organized by function) ---
 import { PlansModule } from './plans/plans.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { ConfigurationsModule } from './configurations/configurations.module';
 import { SecurityModule } from './security/security.module';
-import { SchoolsModule } from './schools/schools.module';
-import { UsersModule } from './users/users.module';
+import { SchoolModule } from './schools/schools.module';
+import { UserModule } from './users/users.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { PositionsModule } from './positions/positions.module';
 import { StudentsModule } from './students/students.module';
@@ -57,6 +57,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { EventsModule } from './events/events.module';
 import { DocumentsModule } from './documents/documents.module';
 import { SupportTicketsModule } from './support-tickets/support-tickets.module';
+import { MailModule } from './mailer/mailer.module';
 
 
 @Module({
@@ -118,8 +119,8 @@ import { SupportTicketsModule } from './support-tickets/support-tickets.module';
     SecurityModule, 
 
     // --- DOMAIN: Organizational Structure ---
-    SchoolsModule,
-    UsersModule,
+    SchoolModule,
+    UserModule,
     DepartmentsModule,
     PositionsModule,
     
@@ -152,6 +153,9 @@ import { SupportTicketsModule } from './support-tickets/support-tickets.module';
     VenuesModule,
     TimetablesModule,
 
+    //mailer module
+    MailModule,
+
     // --- DOMAIN: Communication & Support ---
     ChatModule,
     NotificationsModule,
@@ -162,7 +166,7 @@ import { SupportTicketsModule } from './support-tickets/support-tickets.module';
   providers: [
     // Apply Guards Globally for a "secure-by-default" posture
     { provide: APP_GUARD, useClass: ThrottlerGuard },
-    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: AuthGuard },
   ],
   controllers: [],
 })

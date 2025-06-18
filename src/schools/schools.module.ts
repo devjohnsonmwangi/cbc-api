@@ -1,9 +1,12 @@
 import { Module } from '@nestjs/common';
-import { SchoolsController } from './schools.controller';
-import { SchoolsService } from './schools.service';
+import { SchoolService } from './schools.service';
+import { SchoolController } from './schools.controller';
 
 @Module({
-  controllers: [SchoolsController],
-  providers: [SchoolsService]
+  controllers: [SchoolController],
+  providers: [SchoolService],
+  // Export the SchoolService so it can be injected into other modules,
+  // such as the UserService for validating a school's existence.
+  exports: [SchoolService],
 })
-export class SchoolsModule {}
+export class SchoolModule {}

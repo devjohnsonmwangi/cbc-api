@@ -1066,7 +1066,7 @@ export const passwordResetTokenRelations = relations(passwordResetTokenTable, ({
 // ============================================
 //         Inferred Types for ALL Tables
 // ============================================
-
+export type TNewUser = typeof userTable.$inferInsert; export type TNewSchool = typeof schoolTable.$inferInsert;
 export type TPlanInsert = typeof planTable.$inferInsert; export type TPlanSelect = typeof planTable.$inferSelect;
 export type TSubscriptionInsert = typeof subscriptionTable.$inferInsert; export type TSubscriptionSelect = typeof subscriptionTable.$inferSelect;
 export type TPlatformInvoiceInsert = typeof platformInvoiceTable.$inferInsert; export type TPlatformInvoiceSelect = typeof platformInvoiceTable.$inferSelect;
