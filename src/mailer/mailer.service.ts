@@ -1,16 +1,8 @@
-// src/mail/mail.service.ts
-
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
-
-// --- NEW IMPORTS ---
-// These are needed for template processing
-import * as fs from 'fs';
-import { join } from 'path';
-import * as handlebars from 'handlebars';
-import juice from 'juice';
+import { TUserSelect } from '../drizzle/schema'; // Ensure this path is correct
 
 @Injectable()
 export class MailService implements OnModuleInit {
@@ -22,7 +14,7 @@ export class MailService implements OnModuleInit {
     this.transporter = nodemailer.createTransport({
       host: this.configService.get<string>('MAIL_HOST'),
       port: this.configService.get<number>('MAIL_PORT'),
-      secure: false, // Use 'true' for port 465, 'false' for others like 587
+      secure: this.configService.get<number>('MAIL_PORT') === 465,
       auth: {
         user: this.configService.get<string>('MAIL_USER'),
         pass: this.configService.get<string>('MAIL_PASS'),
@@ -30,80 +22,261 @@ export class MailService implements OnModuleInit {
     });
   }
 
-  // --- NEW PRIVATE HELPER METHOD ---
-  /**
-   * This is the core logic for sending any templated email.
-   * It reads the template, compiles it with data, inlines the CSS, and sends it.
-   * @param to The recipient's email.
-   * @param subject The email subject.
-   * @param templateName The name of the .hbs file in the templates folder.
-   * @param context The data object to fill the template placeholders (e.g., { name, url }).
-   */
-  private async sendTemplatedEmail(
-    to: string,
-    subject: string,
-    templateName: string,
-    context: object,
-  ): Promise<void> {
-    // 1. Construct the path to the template file. `__dirname` points to the current directory (`src/mail`).
-    const templatePath = join(__dirname, 'templates', `${templateName}.hbs`);
-    
-    // 2. Read the template file content.
-    const templateSource = fs.readFileSync(templatePath, 'utf-8');
-    
-    // 3. Compile the template using Handlebars.
-    const compiledTemplate = handlebars.compile(templateSource);
-    
-    // 4. Inject the data (context) into the template.
-    const htmlWithData = compiledTemplate(context);
-    
-    // 5. Use Juice to inline all CSS styles. This is CRUCIAL for email clients.
-    const finalHtml = juice(htmlWithData);
-
-    // 6. Set up the mail options.
-    const mailOptions = {
-      from: this.configService.get<string>('MAIL_FROM'),
-      to,
-      subject,
-      html: finalHtml, // Use the fully processed HTML
-    };
-
+  private async sendEmail(to: string, subject: string, html: string) {
     try {
-      // 7. Send the email.
-      await this.transporter.sendMail(mailOptions);
-      console.log(`${subject} email sent successfully to ${to}`);
+      await this.transporter.sendMail({
+        from: this.configService.get<string>('MAIL_FROM'),
+        to,
+        subject,
+        html,
+      });
+      console.log(`✅ Email sent successfully to ${to}! Subject: ${subject}`);
     } catch (error) {
-      console.error(`Failed to send ${subject} email to ${to}:`, error);
-      throw new Error(`Could not send email: ${subject}`);
+      console.error('⚠️ Error sending email:', error);
+      throw new Error(`Failed to send email. Subject: ${subject}`);
     }
   }
 
-  // --- NEW PUBLIC METHODS TO SEND SPECIFIC EMAILS ---
-
   /**
-   * Sends the fancy password reset email.
+   * Sends a fancy and attractive password reset email.
+   * @param user The user object containing email and full_name.
+   * @param resetUrl The full URL for the user to click to reset their password.
    */
-  async sendPasswordResetEmail(to: string, name: string, url: string): Promise<void> {
-    await this.sendTemplatedEmail(
-      to,
-      'Your Password Reset Request',
-      'password-reset-fancy', // This must match the filename `password-reset-fancy.hbs`
-      { name, url },
-    );
+  async sendPasswordResetEmail(user: TUserSelect, resetUrl: string) {
+    const emailSubject = '🔑 Password Reset Request for Your Account';
+    const emailBody = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+              body {
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+                  margin: 0;
+                  padding: 0;
+                  background-color: #f4f7f6;
+              }
+              .container {
+                  max-width: 600px;
+                  margin: 40px auto;
+                  background-color: #ffffff;
+                  border-radius: 12px;
+                  overflow: hidden;
+                  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+                  border: 1px solid #e9ecef;
+              }
+              .header {
+                  background-color: #007bff; /* A standard, trustworthy blue */
+                  color: white;
+                  padding: 40px;
+                  text-align: center;
+              }
+              .header h1 {
+                  margin: 0;
+                  font-size: 28px;
+                  font-weight: 600;
+              }
+              .content {
+                  padding: 30px 40px;
+                  color: #343a40;
+                  line-height: 1.6;
+              }
+              .content h2 {
+                  font-size: 22px;
+                  color: #212529;
+                  margin-top: 0;
+              }
+              .content p {
+                  font-size: 16px;
+                  margin-bottom: 20px;
+              }
+              .button-container {
+                  text-align: center;
+                  margin: 30px 0;
+              }
+              .button {
+                  display: inline-block;
+                  background-color: #007bff;
+                  color: #ffffff !important; /* Important to override link styles */
+                  padding: 15px 30px;
+                  text-decoration: none;
+                  border-radius: 8px;
+                  font-size: 18px;
+                  font-weight: 500;
+                  transition: background-color 0.3s;
+              }
+              .button:hover {
+                  background-color: #0056b3;
+              }
+              .footer {
+                  background-color: #f8f9fa;
+                  padding: 20px 40px;
+                  text-align: center;
+                  font-size: 14px;
+                  color: #6c757d;
+                  border-top: 1px solid #e9ecef;
+              }
+              .footer p {
+                  margin: 5px 0;
+              }
+              .footer a {
+                  color: #007bff;
+                  text-decoration: none;
+              }
+              .note {
+                  font-size: 14px;
+                  color: #6c757d;
+                  text-align: center;
+              }
+          </style>
+      </head>
+      <body>
+          <div class="container">
+              <div class="header">
+                  <h1>Password Reset Request</h1>
+              </div>
+              <div class="content">
+                  <h2>Hello, ${user.full_name},</h2>
+                  <p>
+                      We received a request to reset the password for your account. If you did not make this request, you can safely ignore this email and no changes will be made to your account.
+                  </p>
+                  <p>
+                      To set a new password, please click the button below:
+                  </p>
+                  <div class="button-container">
+                      <a href="${resetUrl}" class="button">Reset Your Password</a>
+                  </div>
+                  <p class="note">
+                      Please note: This link is only valid for the next 30 minutes for security reasons.
+                  </p>
+              </div>
+              <div class="footer">
+                  <p>© ${new Date().getFullYear()} School Management Platform. All rights reserved.</p>
+                  <p>If you're having trouble with the button, copy and paste this URL into your browser:</p>
+                  <p><a href="${resetUrl}">${resetUrl}</a></p>
+              </div>
+          </div>
+      </body>
+      </html>
+    `;
+    await this.sendEmail(user.email, emailSubject, emailBody);
   }
 
   /**
-   * Sends the welcome and account verification email.
+   * Sends a fancy and attractive welcome email.
+   * Directs the user to the login page.
    */
-  async sendWelcomeEmail(to: string, name: string, verificationUrl: string): Promise<void> {
-    await this.sendTemplatedEmail(
-      to,
-      'Welcome to Our App!',
-      'welcome-email', // This must match the filename `welcome-email.hbs`
-      { name, url: verificationUrl }, // Note: We map `verificationUrl` to `url` to match the template placeholder
-    );
+  async sendWelcomeEmail(user: TUserSelect) {
+    const loginUrl = `${this.configService.get('FRONTEND_URL')}/login`;
+    const emailSubject = '🎉 Welcome to the School Plaza!';
+    const emailBody = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+              body {
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+                  margin: 0;
+                  padding: 0;
+                  background-color: #f4f7f6;
+              }
+              .container {
+                  max-width: 600px;
+                  margin: 40px auto;
+                  background-color: #ffffff;
+                  border-radius: 12px;
+                  overflow: hidden;
+                  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+                  border: 1px solid #e9ecef;
+              }
+              .header {
+                  background-color: #4A90E2; /* A nice, friendly blue */
+                  color: white;
+                  padding: 40px;
+                  text-align: center;
+              }
+              .header h1 {
+                  margin: 0;
+                  font-size: 28px;
+                  font-weight: 600;
+              }
+              .content {
+                  padding: 30px 40px;
+                  color: #343a40;
+                  line-height: 1.6;
+              }
+              .content h2 {
+                  font-size: 22px;
+                  color: #212529;
+                  margin-top: 0;
+              }
+              .content p {
+                  font-size: 16px;
+                  margin-bottom: 20px;
+              }
+              .button-container {
+                  text-align: center;
+                  margin: 30px 0;
+              }
+              .button {
+                  display: inline-block;
+                  background-color: #28a745;
+                  color: #ffffff !important; /* Important to override link styles */
+                  padding: 15px 30px;
+                  text-decoration: none;
+                  border-radius: 8px;
+                  font-size: 18px;
+                  font-weight: 500;
+                  transition: background-color 0.3s;
+              }
+              .button:hover {
+                  background-color: #218838;
+              }
+              .footer {
+                  background-color: #f8f9fa;
+                  padding: 20px 40px;
+                  text-align: center;
+                  font-size: 14px;
+                  color: #6c757d;
+                  border-top: 1px solid #e9ecef;
+              }
+              .footer a {
+                  color: #4A90E2;
+                  text-decoration: none;
+              }
+          </style>
+      </head>
+      <body>
+          <div class="container">
+              <div class="header">
+                  <h1>Welcome Aboard!</h1>
+              </div>
+              <div class="content">
+                  <h2>Hello, ${user.full_name}!</h2>
+                  <p>
+                      We are thrilled to welcome you to the <strong>School Plaza</strong>. Your account has been successfully created, and you're all set to explore everything we have to offer.
+                  </p>
+                  <p>
+                      Click the button below to sign in to your new account and get started.
+                  </p>
+                  <div class="button-container">
+                      <a href="${loginUrl}" class="button">Go to Login Page</a>
+                  </div>
+                  <p>
+                      If you have any questions, feel free to reply to this email. We're always happy to help!
+                  </p>
+              </div>
+              <div class="footer">
+                  <p>© ${new Date().getFullYear()} School Management Platform. All rights reserved.</p>
+                  <p><a href="${this.configService.get('FRONTEND_URL')}">Visit our Website</a></p>
+              </div>
+          </div>
+      </body>
+      </html>
+    `;
+    await this.sendEmail(user.email, emailSubject, emailBody);
   }
-
-  // Your old sendEmail method is no longer needed, as sendTemplatedEmail replaces it.
-  // You can keep it if you need to send simple, non-templated emails.
 }

@@ -2,6 +2,7 @@
 
 import { relations } from "drizzle-orm";
 import { pgTable, pgEnum, serial, varchar, timestamp, integer, decimal, text, index, uniqueIndex, boolean, primaryKey, bigint, jsonb } from "drizzle-orm/pg-core";
+import { IsOptional } from 'class-validator';
 
 // ============================================
 //                   Enums
@@ -113,7 +114,7 @@ export const schoolTable = pgTable("schoolTable", {
   name: varchar("name", { length: 255 }).notNull(),
   address: text("address"),
   contact_phone: varchar("contact_phone"),
-  contact_email: varchar("contact_email"),
+  contact_email: varchar("contact_email").unique(),
   school_logo_url: varchar("school_logo_url"),
   settings: jsonb("settings").$type<SchoolSettings>().default({ isChatEnabled: true, isParentPortalEnabled: true, reportCardTemplate: 'template_a', requireConsentForTrips: true, ipWhitelist: null }),
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
@@ -634,10 +635,12 @@ export const supportTicketTable = pgTable("supportTicketTable", {
 //         Advanced Security Features
 // ============================================
 
+// NEW, CORRECTED version
 export const userSessionTable = pgTable("userSessionTable", {
     session_id: serial("session_id").primaryKey(),
-    user_id: integer("user_id").notNull().references(() => userTable.user_id, {onDelete: 'cascade'}),
-    token: varchar("token").notNull().unique(),
+    // ADD .unique() TO THE user_id COLUMN
+    user_id: integer("user_id").notNull().unique().references(() => userTable.user_id, {onDelete: 'cascade'}),
+    token: varchar("token").notNull(), // The token itself no longer needs to be unique if user_id is.
     ip_address: varchar("ip_address"),
     user_agent: text("user_agent"),
     created_at: timestamp("created_at", {withTimezone: true}).defaultNow(),

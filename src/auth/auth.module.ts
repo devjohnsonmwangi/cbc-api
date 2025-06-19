@@ -5,32 +5,28 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 
-import { UserService } from '../users/users.service'; // Corrected from UserModule
+// --- SERVICE AND MODULE IMPORTS ---
+import { SchoolModule } from 'src/schools/schools.module'; // 👈 1. Import SchoolModule
+//import { SchoolService } from 'src/school/school.service'; // Import SchoolService if needed directly
+import { UserService } from '../users/users.service';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { AuthGuard } from './guards/access-token.guard.ts';
+import { AuthGuard } from './guards/access-token.guard';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
 import { RolesGuard } from './guards/roles.guard';
 
-/**
- * The AuthModule is responsible for handling all authentication and authorization logic.
- * It is marked as @Global() to make its providers, especially JwtService, available
- * throughout the entire application without needing to import AuthModule everywhere.
- * This is crucial for guards that might be used in other modules.
- */
-@Global() // 👈 1. Make this module global
+@Global()
 @Module({
   imports: [
-    PassportModule, // Standard module for authentication strategies
-    // 👈 2. Configure JwtModule asynchronously to use ConfigService
+    SchoolModule, // 👈 2. Add SchoolModule to the imports array
+    PassportModule,
     JwtModule.registerAsync({
-      imports: [ConfigModule], // Make ConfigService available inside this module
+      imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        // Use your secrets from the .env file
-        secret: configService.get<string>('JWT_ACCESS_SECRET'),
+        secret: configService.get<string>('JWT_SECRET'),
         signOptions: {
-          expiresIn: configService.get<string>('JWT_ACCESS_EXPIRATION_TIME'),
+          expiresIn: configService.get<string>('JWT_ACCESS_EXPIRATION_TIME','15m'), // Default to 15 minutes if not set
         },
       }),
     }),
@@ -38,12 +34,13 @@ import { RolesGuard } from './guards/roles.guard';
   controllers: [AuthController],
   providers: [
     AuthService,
-    UserService, // 👈 3. Provide UserService directly
+    UserService,
+    // SchoolService is now provided by the imported SchoolModule,
+    // so you don't need to list it here.
     AuthGuard,
     RefreshTokenGuard,
     RolesGuard,
   ],
-  // 👈 4. Export services and modules for use in other parts of the app
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

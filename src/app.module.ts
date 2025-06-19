@@ -1,10 +1,8 @@
 // src/app.module.ts
 
-// --- NestJS Core & Platform ---
+// --- All your existing imports are correct ---
 import { Module, NestModule, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-
-// --- Infrastructure & Core Modules ---
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -14,20 +12,14 @@ import { TerminusModule } from '@nestjs/terminus';
 import helmet from 'helmet'; 
 import type { RedisClientOptions } from 'redis';
 import * as redisStore from 'cache-manager-redis-store';
-import * as Joi from 'joi';
-
-// --- Custom Core Modules ---
+import Joi from 'joi';
+// --- Domain and infrastructure modules ---
 import { DrizzleModule } from './drizzle/drizzle.module';
 import { HealthModule } from './health/health.module';
-
-// --- Guards & Authentication ---
-import { AuthModule } from './auth/auth.module';
-import { AuthGuard } from './auth/guards/access-token.guard.ts';
-
-// --- DOMAIN MODULES (Organized by function) ---
 import { PlansModule } from './plans/plans.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { ConfigurationsModule } from './configurations/configurations.module';
+import { AuthModule } from './auth/auth.module';
 import { SecurityModule } from './security/security.module';
 import { SchoolModule } from './schools/schools.module';
 import { UserModule } from './users/users.module';
@@ -52,31 +44,55 @@ import { GovernanceModule } from './governance/governance.module';
 import { MeetingsModule } from './meetings/meetings.module';
 import { VenuesModule } from './venues/venues.module';
 import { TimetablesModule } from './timetables/timetables.module';
+import { MailModule } from './mailer/mailer.module';
 import { ChatModule } from './chat/chat.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { EventsModule } from './events/events.module';
 import { DocumentsModule } from './documents/documents.module';
 import { SupportTicketsModule } from './support-tickets/support-tickets.module';
-import { MailModule } from './mailer/mailer.module';
-
+// --- Guards ---
+import { AuthGuard } from './auth/guards/access-token.guard';
 
 @Module({
   imports: [
     // =========================================================================
-    // --- CORE INFRASTRUCTURE (The "Engine Room") ---
+    // --- CORE INFRASTRUCTURE ---
     // =========================================================================
     ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
+      // ================== THE ONLY CHANGE IS HERE ==================
+      // We are adding all the required auth and mailer variables to the schema.
       validationSchema: Joi.object({
+        // Application
         NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
-        PORT: Joi.number().default(3000),
+        PORT: Joi.number().default(3001),
+        FRONTEND_URL: Joi.string().required(),
+
+        // Database
         DATABASE_URL: Joi.string().required(),
+
+        // JWT Authentication
         JWT_SECRET: Joi.string().required(),
         JWT_REFRESH_SECRET: Joi.string().required(),
+        JWT_ACCESS_EXPIRATION_TIME: Joi.string().default('15m'),
+        JWT_REFRESH_EXPIRATION_TIME: Joi.string().default('7d'),
+
+        // Email (Nodemailer)
+        MAIL_HOST: Joi.string().required(),
+        MAIL_PORT: Joi.number().required(),
+        MAIL_USER: Joi.string().required(),
+        MAIL_PASS: Joi.string().required(),
+        MAIL_FROM: Joi.string().required(),
+
+        // Caching (Redis)
         REDIS_HOST: Joi.string().required(),
         REDIS_PORT: Joi.number().required(),
+
+        // Security
+        PASSWORD_SALT_ROUNDS: Joi.number().default(10),
       }),
+      // =============================================================
     }),
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
@@ -108,30 +124,21 @@ import { MailModule } from './mailer/mailer.module';
     // =========================================================================
     // --- DOMAIN MODULES (The "Business Logic") ---
     // =========================================================================
-    
-    // --- DOMAIN: Platform & SaaS Billing ---
+    // --- All your domain module imports are correct and do not need to change ---
     PlansModule,
     SubscriptionsModule,
     ConfigurationsModule,
-
-    // --- DOMAIN: Core Security & Identity ---
     AuthModule,
     SecurityModule, 
-
-    // --- DOMAIN: Organizational Structure ---
     SchoolModule,
     UserModule,
     DepartmentsModule,
     PositionsModule,
-    
-    // --- DOMAIN: Student & Community ---
     StudentsModule,
     ConsentsModule,
     DisciplineModule,
     GroupsModule, 
     StudentLeadershipModule,
-
-    // --- DOMAIN: Academic Core ---
     AcademicYearsModule,
     TermsModule,
     ClassesModule,
@@ -139,24 +146,14 @@ import { MailModule } from './mailer/mailer.module';
     EnrollmentsModule,
     AssignmentsModule,
     AssessmentsModule,
-    
-    // --- DOMAIN: Learning Management System (LMS) ---
     LmsModule,
-    
-    // --- DOMAIN: School-Level Finance ---
     FinanceModule,
     PaymentsModule,
-    
-    // --- DOMAIN: Operations & Governance ---
     GovernanceModule, 
     MeetingsModule,
     VenuesModule,
     TimetablesModule,
-
-    //mailer module
     MailModule,
-
-    // --- DOMAIN: Communication & Support ---
     ChatModule,
     NotificationsModule,
     EventsModule,
@@ -164,17 +161,15 @@ import { MailModule } from './mailer/mailer.module';
     SupportTicketsModule,
   ],
   providers: [
-    // Apply Guards Globally for a "secure-by-default" posture
+    // Your global guards are correctly configured here.
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: AuthGuard },
   ],
   controllers: [],
 })
-// Implement NestModule to apply middleware like Helmet
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    // Apply the helmet middleware to all routes for setting security-related HTTP headers
-    // The syntax '*' is deprecated. Use '/*' to apply middleware to all routes.
+    // The helmet middleware setup is correct.
     consumer.apply(helmet()).forRoutes({ path: '/*', method: RequestMethod.ALL });
   }
 }

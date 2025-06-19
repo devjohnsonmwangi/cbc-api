@@ -3,9 +3,9 @@ import { Request } from 'express';
 import { SchoolService } from './schools.service';
 import { CreateSchoolDto } from './dto/create-school.dto';
 import { UpdateSchoolDto } from './dto/update-school.dto';
-import { AuthGuard } from '../auth/guards/access-token.guard.ts';
+import { AuthGuard } from '../auth/guards/access-token.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/public.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 /**
  * Controller for managing schools.
@@ -41,7 +41,7 @@ export class SchoolController {
    * Accessible by school_admin for THEIR OWN school only.
    */
   @Get(':id')
-  @Roles('super_admin', 'school_admin')
+  @Roles('super_admin', 'school_admin','dos','support_staff')
   findOne(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
     const user = req.user as { sub: number; school_id: number; roles: { role: string }[] };
     const userRoles = user.roles.map(r => r.role);
@@ -60,7 +60,7 @@ export class SchoolController {
    * Endpoint for a super_admin to update a school's details.
    */
   @Patch(':id')
-  @Roles('super_admin')
+  @Roles('super_admin', 'school_admin', 'dos', 'support_staff')
   update(@Param('id', ParseIntPipe) id: number, @Body() updateSchoolDto: UpdateSchoolDto) {
     return this.schoolService.update(id, updateSchoolDto);
   }
