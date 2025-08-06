@@ -32,7 +32,6 @@ import { IsOptional } from 'class-validator';
 //This  section   entails  the   enums  used  in  the  schema. 
 //All   enums  are  defined   here.
 
-
 export const genderEnum = pgEnum("gender", ['male', 'female', 'other']);
 export const schoolRoleEnum = pgEnum("school_role", ['super_admin', 'school_admin', 'dos', 'teacher', 'student', 'parent', 'accountant', 'librarian', 'kitchen_staff', 'groundsman', 'support_staff', 'board_member']);
 export const enrollmentStatusEnum = pgEnum("enrollment_status", ['active', 'graduated', 'withdrawn', 'suspended']);
@@ -57,19 +56,12 @@ export const questionTypeEnum = pgEnum("question_type", ['multiple_choice', 'tru
 export const subscriptionStatusEnum = pgEnum("subscription_status", ['trialing', 'active', 'past_due', 'canceled', 'unpaid']);
 export const planIntervalEnum = pgEnum("plan_interval", ['month', 'year']);
 export const platformInvoiceStatusEnum = pgEnum("platform_invoice_status", ['draft', 'open', 'paid', 'uncollectible', 'void']);
-//SYSTEM TABLES 
-//in  this   section    all  tables  are   defined   and   there   enteries  are   defined   here
-//any   addition    of  a  new  table  must   be   at  the   bottom   of   the  tables   or   as   the last  most  table of its  domain  section 
-//  and   document  it   correctly
-//dont   push  any   changes   before  testing   and    reviewing  the   changes   with   the   senior  developers
+// NEW ADDITION for Timetabling Preferences
+export const availabilityStatusEnum = pgEnum("availability_status", ['preferred', 'available', 'unavailable']);
 
 // ============================================
 //         Platform Subscription & Billing
 // ============================================
-// This section handles how schools subscribe and pay OUR company for using the platform.
-//This   layer  is  for  the   platform  subscription  and   billing  management.  
-//All  tables  related  to  platform  subscription  and   billing  are   defined   here.
-
 export interface PlanFeatures { canUseLms: boolean; maxStudents: number; supportLevel: 'basic' | 'priority'; canUseAdvancedReports: boolean; }
 export const planTable = pgTable("planTable", {
   plan_id: serial("plan_id").primaryKey(),
@@ -115,14 +107,9 @@ export const platformPaymentTable = pgTable("platformPaymentTable", {
   payment_date: timestamp("payment_date", { withTimezone: true }).defaultNow(),
 });
 
-
 // ============================================
 //      School-Specific Third-Party Config
 // ============================================
-// This section handles the keys each school provides for THEIR payment integrations.
-//This   layer  is  for  the   school-specific  third-party  configuration management.
-//All  tables  related  to  school-specific  third-party  configuration are   defined   here.
-
 export interface MpesaCredentials { consumerKey: string; consumerSecret: string; passKey: string; shortCode: string; environment: 'sandbox' | 'live'; }
 export interface StripeCredentials { secretKey: string; webhookSecret: string; }
 
@@ -136,14 +123,9 @@ export const schoolConfigurationTable = pgTable("schoolConfigurationTable", {
     updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
-
 // ============================================
 //         Core Architecture & Org Chart
 // ============================================
-// This section defines the core architecture of the school and its organizational chart.
-//This   layer  is  for  the   core architecture and organizational chart management.
-//All  tables related   are   defined   here
-
 export interface SchoolSettings { isChatEnabled: boolean; isParentPortalEnabled: boolean; reportCardTemplate: 'template_a' | 'template_b'; requireConsentForTrips: boolean; ipWhitelist: string[] | null; }
 export const schoolTable = pgTable("schoolTable", {
   school_id: serial("school_id").primaryKey(),
@@ -218,8 +200,6 @@ export const functionalAssignmentTable = pgTable("functionalAssignmentTable", {
 // ============================================
 //         Student, Parent & Community
 // ============================================
-//This  
-
 export const studentTable = pgTable("studentTable", {
     student_id: serial("student_id").primaryKey(),
     user_id: integer("user_id").unique().references(() => userTable.user_id, { onDelete: "set null" }),
@@ -260,11 +240,9 @@ export const consentResponseTable = pgTable("consentResponseTable", {
     responded_at: timestamp("responded_at", { withTimezone: true }).defaultNow(),
 });
 
-
 // ============================================
 //         Governance & Meetings
 // ============================================
-
 export const boardOfManagementTable = pgTable("boardOfManagementTable", {
     bom_id: serial("bom_id").primaryKey(),
     school_id: integer("school_id").notNull().unique().references(() => schoolTable.school_id, { onDelete: 'cascade' }),
@@ -321,7 +299,6 @@ export const actionItemTable = pgTable("actionItemTable", {
 // ============================================
 //      Robust E-Learning / LMS Module
 // ============================================
-
 export const courseTable = pgTable("courseTable", {
     course_id: serial("course_id").primaryKey(),
     subject_id: integer("subject_id").notNull().references(() => subjectTable.subject_id),
@@ -416,11 +393,9 @@ export const studentAnswerTable = pgTable("studentAnswerTable", {
     answer_text: text("answer_text"),
 });
 
-
 // ============================================
 //         Academic & Operational Core
 // ============================================
-
 export const academicYearTable = pgTable("academicYearTable", {
     year_id: serial("year_id").primaryKey(),
     school_id: integer("school_id").notNull().references(() => schoolTable.school_id, { onDelete: "cascade" }),
@@ -518,6 +493,17 @@ export const timetableSlotTable = pgTable("timetableSlotTable", {
     end_time: varchar("end_time", { length: 5 }).notNull(),
 });
 
+// NEW ADDITION: Table to store teacher preferences for timetabling
+export const teacherAvailabilityTable = pgTable("teacherAvailabilityTable", {
+    availability_id: serial("availability_id").primaryKey(),
+    teacher_id: integer("teacher_id").notNull().references(() => userTable.user_id, { onDelete: 'cascade' }),
+    term_id: integer("term_id").notNull().references(() => termTable.term_id, { onDelete: 'cascade' }),
+    slot_id: integer("slot_id").notNull().references(() => timetableSlotTable.slot_id, { onDelete: 'cascade' }),
+    status: availabilityStatusEnum("status").notNull(),
+}, (table) => ({
+    uniquePreference: uniqueIndex("teacher_term_slot_idx").on(table.teacher_id, table.term_id, table.slot_id),
+}));
+
 export const lessonTable = pgTable("lessonTable", {
     lesson_id: serial("lesson_id").primaryKey(),
     term_id: integer("term_id").notNull().references(() => termTable.term_id, { onDelete: 'cascade' }),
@@ -560,7 +546,6 @@ export const leadershipPositionTable = pgTable("leadershipPositionTable", {
 // ============================================
 //         Finance & Communication (School Level)
 // ============================================
-
 export const feeStructureTable = pgTable("feeStructureTable", {
     fee_structure_id: serial("fee_structure_id").primaryKey(),
     academic_year_id: integer("academic_year_id").notNull().references(() => academicYearTable.year_id, { onDelete: "cascade" }),
@@ -671,13 +656,10 @@ export const supportTicketTable = pgTable("supportTicketTable", {
 // ============================================
 //         Advanced Security Features
 // ============================================
-
-// NEW, CORRECTED version
 export const userSessionTable = pgTable("userSessionTable", {
     session_id: serial("session_id").primaryKey(),
-    // ADD .unique() TO THE user_id COLUMN
     user_id: integer("user_id").notNull().unique().references(() => userTable.user_id, {onDelete: 'cascade'}),
-    token: varchar("token").notNull(), // The token itself no longer needs to be unique if user_id is.
+    token: varchar("token").notNull(),
     ip_address: varchar("ip_address"),
     user_agent: text("user_agent"),
     created_at: timestamp("created_at", {withTimezone: true}).defaultNow(),
@@ -727,28 +709,20 @@ export const auditLogTable = pgTable("auditLogTable", {
     created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
-// --- BEFORE THE FIX ---
 export const passwordResetTokenTable = pgTable("passwordResetTokenTable", {
   id: serial("id").primaryKey(),
   token: varchar("token", { length: 255 }).notNull().unique(),
-  user_id: integer("user_id").notNull().references(() => userTable.user_id, { onDelete: "cascade" }), // <--- THIS IS THE LINE TO CHANGE
+  user_id: integer("user_id").notNull().references(() => userTable.user_id, { onDelete: "cascade" }),
   expires_at: timestamp("expires_at", { withTimezone: true }).notNull(),
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
   tokenIndex: uniqueIndex("prt_token_idx").on(table.token),
-  userIdIndex: index("prt_user_id_idx").on(table.user_id), // This is just an index, not a unique constraint
+  userIdIndex: index("prt_user_id_idx").on(table.user_id),
 }));
 
 // =================================================================================
 //                        COMPLETE RELATIONSHIPS DEFINITION
 // =================================================================================
-//this   are   relationship   definitions for   the  schema tables  defined    above   ,    this   relations  are  
-// used to define how tables are related to each other in the database schema
-//The  application  is  not   tied    to  fixed    tables  and   relationship   ,    this   can    grow  up   incrementally     
-//   the    structure   below    is  ready  for  that    .Every developer    should  know    that   the  fellow  updated   activities should   be   documented 
-//this     will  ensure smooth   follow  up  by  other    developers   in   cherge  of  development  and maintenance  
-
-
 // --- Platform Billing ---
 export const planRelations = relations(planTable, ({ many }) => ({
   subscriptions: many(subscriptionTable),
@@ -796,6 +770,8 @@ export const userRelations = relations(userTable, ({ one, many }) => ({
     studentProfile: one(studentTable, { fields: [userTable.user_id], references: [studentTable.user_id] }),
     parentLinks: many(parentStudentLinkTable, { relationName: "parentUser" }),
     teacherSubjectAssignments: many(teacherSubjectAssignmentTable),
+    // NEW ADDITION: Link user to their availability preferences
+    teacherAvailabilities: many(teacherAvailabilityTable),
     assessmentsGiven: many(assessmentTable),
     paymentsMade: many(paymentTable),
     documentsUploaded: many(documentTable),
@@ -922,6 +898,8 @@ export const termRelations = relations(termTable, ({ one, many }) => ({
     assessments: many(assessmentTable),
     invoices: many(invoiceTable),
     lessons: many(lessonTable),
+    // NEW ADDITION: Link term to teacher availability preferences
+    teacherAvailabilities: many(teacherAvailabilityTable),
 }));
 export const classRelations = relations(classTable, ({ one, many }) => ({
     school: one(schoolTable, { fields: [classTable.school_id], references: [schoolTable.school_id] }),
@@ -1019,7 +997,17 @@ export const venueRelations = relations(venueTable, ({ one, many }) => ({
 export const timetableSlotRelations = relations(timetableSlotTable, ({ one, many }) => ({
     school: one(schoolTable, { fields: [timetableSlotTable.school_id], references: [schoolTable.school_id] }),
     lessons: many(lessonTable),
+    // NEW ADDITION: Link slot to teacher availability preferences
+    teacherAvailabilities: many(teacherAvailabilityTable),
 }));
+
+// NEW ADDITION: Relations for the new teacherAvailabilityTable
+export const teacherAvailabilityRelations = relations(teacherAvailabilityTable, ({ one }) => ({
+    teacher: one(userTable, { fields: [teacherAvailabilityTable.teacher_id], references: [userTable.user_id] }),
+    term: one(termTable, { fields: [teacherAvailabilityTable.term_id], references: [termTable.term_id] }),
+    slot: one(timetableSlotTable, { fields: [teacherAvailabilityTable.slot_id], references: [timetableSlotTable.slot_id] }),
+}));
+
 export const lessonRelations = relations(lessonTable, ({ one }) => ({
     term: one(termTable, { fields: [lessonTable.term_id], references: [termTable.term_id] }),
     slot: one(timetableSlotTable, { fields: [lessonTable.slot_id], references: [timetableSlotTable.slot_id] }),
@@ -1115,11 +1103,7 @@ export const passwordResetTokenRelations = relations(passwordResetTokenTable, ({
 }));
 
 // ============================================
-//         Inferred Types for ALL Tables,   this   are   types   for  each    table   with  regard  to  the    data  being   sent  by  the  user  and  the    data    being  sent
-//by    the  sever   or the   api   or  the    database    in  general   ,    developers  should    follow   best   practices   for   data   validation   and   error   handling
-//  this  will   help   ensure   that   the   data   being   sent   is   valid   and   can   be   processed   correctly
-//         and   that   the   data   being   received   is   valid   and   can   be   processed   correctly
-//this    will   ensure   integrety   in  transactions   and   data   flow   in  the    system
+//         Inferred Types for ALL Tables
 // ============================================
 export type TNewUser = typeof userTable.$inferInsert; export type TNewSchool = typeof schoolTable.$inferInsert;
 export type TPlanInsert = typeof planTable.$inferInsert; export type TPlanSelect = typeof planTable.$inferSelect;
@@ -1165,6 +1149,8 @@ export type TStudentAnswerInsert = typeof studentAnswerTable.$inferInsert; expor
 export type TDisciplineIncidentInsert = typeof disciplineIncidentTable.$inferInsert; export type TDisciplineIncidentSelect = typeof disciplineIncidentTable.$inferSelect;
 export type TVenueInsert = typeof venueTable.$inferInsert; export type TVenueSelect = typeof venueTable.$inferSelect;
 export type TTimetableSlotInsert = typeof timetableSlotTable.$inferInsert; export type TTimetableSlotSelect = typeof timetableSlotTable.$inferSelect;
+// NEW ADDITION: Inferred types for the new table
+export type TTeacherAvailabilityInsert = typeof teacherAvailabilityTable.$inferInsert; export type TTeacherAvailabilitySelect = typeof teacherAvailabilityTable.$inferSelect;
 export type TLessonInsert = typeof lessonTable.$inferInsert; export type TLessonSelect = typeof lessonTable.$inferSelect;
 export type TGroupInsert = typeof groupTable.$inferInsert; export type TGroupSelect = typeof groupTable.$inferSelect;
 export type TGroupMembershipInsert = typeof groupMembershipTable.$inferInsert; export type TGroupMembershipSelect = typeof groupMembershipTable.$inferSelect;
