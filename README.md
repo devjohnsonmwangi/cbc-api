@@ -1,5 +1,6 @@
 # Project ShulePro: The School Operating System
-
+# This system   was designed and developed by JOMULTD 
+# Contact  us at jomulimited2@gmail.com  or  reach out our  social  media pages 
 ## Database Schema Documentation
 
 **Version:** 1.0

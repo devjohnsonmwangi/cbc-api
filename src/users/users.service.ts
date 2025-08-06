@@ -1,7 +1,17 @@
+//developed    with  NestJS   ,   
+//  TypeScript   ,   and   Drizzle ORM
+//  developed  by   senior  developer   Eng Johnson Mwangi
+//  this   code  is  part  of  a  school management system API
+//  this   code  is  for  managing  users  in  the   school
+//any  issues  or   bugs  should    be  reported  to   the   developer  team:  senior developer Eng Johnson Mwangi
+//my   email:
+//johnsonthuraniramwangi@gmail.com
+//or our   developer  team email: Gmail jomulimited2@gmail.com
+
 import { Injectable, Inject, NotFoundException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { eq, and, isNull } from 'drizzle-orm';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { DrizzleDB } from '../drizzle/drizzle.module';
 import { DRIZZLE_ORM_TOKEN } from '../drizzle/drizzle.constants';
 import * as schema from '../drizzle/schema';
@@ -43,6 +53,20 @@ export class UserService {
     const { password, two_factor_secret, ...secureUser } = user;
     return secureUser;
   }
+//this   is  an   asnchronous function that creates a new user in the database. 
+//this   what  it  does 
+  /**
+   * Creates a new user in the database.
+   * @param createUserDto The data transfer object containing user details.
+   * @param creatorRoles The roles of the user creating this new user.
+   * @returns The newly created user object, secured without sensitive fields.
+   */
+//note   to  developers:
+  // Ensure that the creator has the necessary permissions to create users with specific roles.
+  // Implement role-based access control to prevent unauthorized user creation.
+  // Validate the input data thoroughly to prevent SQL injection and other security issues.
+
+
 
   async create(createUserDto: CreateUserDto, creatorRoles: string[]) {
     const { roles, ...userData } = createUserDto;

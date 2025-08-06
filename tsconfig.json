@@ -3,32 +3,38 @@
     /* --- Core Type-Checking --- */
     "target": "ES2022",
     "module": "CommonJS",
-    "lib": ["ES2022"],
+    "lib": ["ES2022"], // This is correct. It sets the JavaScript features to a modern version.
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": true, // Enables all strict type-checking options
-    "noImplicitAny": true, // Raise error on expressions and declarations with an implied 'any' type.
-    "strictNullChecks": true, // In strict null checking mode, the `null` and `undefined` values are not in the domain of every type.
-    "strictFunctionTypes": true, // Disable bivariant parameter checking for function types.
-    "strictBindCallApply": true, // Enable stricter checking of the `bind`, `call`, and `apply` methods on functions.
-    "strictPropertyInitialization": false, // Handled by NestJS DI
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": false,
     "noImplicitThis": true,
     "alwaysStrict": true,
 
     /* --- Module Resolution --- */
     "moduleResolution": "node",
-    "baseUrl": "./", // This must be specified if "paths" is.
+    "baseUrl": "./",
     "paths": {
-      // Path aliases for clean, absolute imports
       "@/*": ["src/*"],
       "@/auth/*": ["src/auth/*"],
       "@/core/*": ["src/core/*"],
       "@/drizzle/*": ["src/drizzle/*"],
       "@/shared/*": ["src/shared/*"]
     },
+    
+    // =======================================================================
+    // THIS IS THE KEY SETTING THAT SOLVES THE ERRORS. IT IS ALREADY CORRECT.
+    // It tells TypeScript to load all type definitions for the Node.js
+    // environment, which includes 'crypto', 'process', and 'console'.
     "types": ["node", "jest"],
+    // =======================================================================
+
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true, // Allow default imports from modules with no default export.
+    "allowSyntheticDefaultImports": true,
 
     /* --- Emit --- */
     "declaration": true,
@@ -39,7 +45,7 @@
     "outDir": "./dist",
 
     /* --- Project --- */
-    "incremental": true, // Enable incremental compilation
+    "incremental": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true
   },

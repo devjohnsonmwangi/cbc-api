@@ -34,7 +34,7 @@ Content-Type: application/json
 # Get the profile of the logged-in user (requires auth)
 # NOTE: You need to replace "YOUR_ACCESS_TOKEN" with the one from the login response.
 GET {{baseUrl}}/users
-Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjgsImVtYWlsIjoiam9obnNvbnRodXJhbmlyYW13YW5naUBnbWFpbC5jb20iLCJzY2hvb2xfaWQiOm51bGwsInJvbGVzIjpbeyJyb2xlIjoic3VwZXJfYWRtaW4ifV0sImlhdCI6MTc1MDM0MzY4OSwiZXhwIjoxNzUwMzQ0NTg5fQ.Dd4t9Ndaj8EnJ_mQXSU_0JHmjsD6iXWr18mwKv2AVQM"
+Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjgsImVtYWlsIjoiam9obnNvbnRodXJhbmlyYW13YW5naUBnbWFpbC5jb20iLCJzY2hvb2xfaWQiOm51bGwsInJvbGVzIjpbeyJyb2xlIjoic3VwZXJfYWRtaW4ifV0sImlhdCI6MTc1MzY4NTYyNiwiZXhwIjoxNzUzNjg2NTI2fQ.Fq6yl7t7SkOEh3hd-ETTlWB272IfTpPX3_YwYVw1zDI"
 ###
 # @name requestPasswordReset
 # Request a password reset link
@@ -84,4 +84,55 @@ Content-Type: application/json
     "roles": [
         "school_admin"
     ]
+}
+
+
+
+###
+//getting all schools
+#### @name getAllSchools
+# Get all schools (requires auth)
+GET {{baseUrl}}/schools
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjgsImVtYWlsIjoiam9obnNvbnRodXJhbmlyYW13YW5naUBnbWFpbC5jb20iLCJzY2hvb2xfaWQiOm51bGwsInJvbGVzIjpbeyJyb2xlIjoic3VwZXJfYWRtaW4ifV0sImlhdCI6MTc1MzgyMTQzOCwiZXhwIjoxNzUzODIyMzM4fQ.hvuxCpfI6ddnldzCRQj5NLfmLXljTAiGvZRF32zPjMw
+
+
+###
+//getting  school admin 
+#### @name getSchoolAdmins
+# Get all school admins (requires auth)
+GET {{baseUrl}}/users/school-admins
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjgsImVtYWlsIjoiam9obnNvbnRodXJhbmlyYW13YW5naUBnbWFpbC5jb20iLCJzY2hvb2xfaWQiOm51bGwsInJvbGVzIjpbeyJyb2xlIjoic3VwZXJfYWRtaW4ifV0sImlhdCI6MTc1MDM2NDM5NiwiZXhwIjoxNzUwMzY1Mjk2fQ.HZtPAIYN109YUtbyBW8GFQDUbcpvLC13Mfr6vK1zPWE
+
+
+###//getting  school admin by id
+#### @name getSchoolAdminById
+# Get a school admin by ID (requires auth)
+GET {{baseUrl}}/users/8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjgsImVtYWlsIjoiam9obnNvbnRodXJhbmlyYW13YW5naUBnbWFpbC5jb20iLCJzY2hvb2xfaWQiOm51bGwsInJvbGVzIjpbeyJyb2xlIjoic3VwZXJfYWRtaW4ifV0sImlhdCI6MTc1MTM2NjEzMiwiZXhwIjoxNzUxMzY3MDMyfQ.vHdNfc_-WulE0Xp9KPWDEITviQ_Zuf-DSdYKwnUsl6M
+
+
+
+
+###// requesting super admin password reset request
+#### @name requestSuperAdminPasswordReset
+# Request a super admin password reset link
+POST {{baseUrl}}/auth/password/request-reset
+Content-Type: application/json
+
+{
+  "email": "johnsonthuraniramwangi@gmail.com"
+}
+
+
+
+### //resetting supar admin password
+#### @name resetSuperAdminPassword
+# Reset the super admin password (requires auth)
+POST {{baseUrl}}/auth/password/reset
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjgsImVtYWlsIjoiam9obnNvbnRodXJhbmlyYW13YW5naUBnbWFpbC5jb20iLCJzY2hvb2xfaWQiOm51bGwsInJvbGVzIjpbeyJyb2xlIjoic3VwZXJfYWRtaW4ifV0sImlhdCI6MTc1MTM2NjEzMiwiZXhwIjoxNzUxMzY3MDMyfQ.vHdNfc_-WulE0Xp9KPWDEITviQ_Zuf-DSdYKwnUsl6M
+Content-Type: application/json
+
+{
+    "email": "johnsonthuraniramwangi@gmail.com",
+    "new_password": "@johnson2001mwangi"
 }

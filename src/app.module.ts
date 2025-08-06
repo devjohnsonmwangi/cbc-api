@@ -9,10 +9,11 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { CacheModule } from '@nestjs/cache-manager';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TerminusModule } from '@nestjs/terminus';
-import helmet from 'helmet'; 
+import helmet from 'helmet';
 import type { RedisClientOptions } from 'redis';
 import * as redisStore from 'cache-manager-redis-store';
 import Joi from 'joi';
+
 // --- Domain and infrastructure modules ---
 import { DrizzleModule } from './drizzle/drizzle.module';
 import { HealthModule } from './health/health.module';
@@ -50,6 +51,10 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { EventsModule } from './events/events.module';
 import { DocumentsModule } from './documents/documents.module';
 import { SupportTicketsModule } from './support-tickets/support-tickets.module';
+import { TeacherAssignmentsModule } from './teacher-assignments/teacher-assignments.module';
+import { StudentEnrollmentsModule } from './student-enrollment/student-enrollment.module';
+import { TimetableSlotsModule } from './timetable-slots/timetable-slots.module';
+
 // --- Guards ---
 import { AuthGuard } from './auth/guards/access-token.guard';
 
@@ -61,8 +66,6 @@ import { AuthGuard } from './auth/guards/access-token.guard';
     ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
-      // ================== THE ONLY CHANGE IS HERE ==================
-      // We are adding all the required auth and mailer variables to the schema.
       validationSchema: Joi.object({
         // Application
         NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
@@ -92,7 +95,6 @@ import { AuthGuard } from './auth/guards/access-token.guard';
         // Security
         PASSWORD_SALT_ROUNDS: Joi.number().default(10),
       }),
-      // =============================================================
     }),
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
@@ -124,12 +126,11 @@ import { AuthGuard } from './auth/guards/access-token.guard';
     // =========================================================================
     // --- DOMAIN MODULES (The "Business Logic") ---
     // =========================================================================
-    // --- All your domain module imports are correct and do not need to change ---
     PlansModule,
     SubscriptionsModule,
     ConfigurationsModule,
     AuthModule,
-    SecurityModule, 
+    SecurityModule,
     SchoolModule,
     UserModule,
     DepartmentsModule,
@@ -137,7 +138,7 @@ import { AuthGuard } from './auth/guards/access-token.guard';
     StudentsModule,
     ConsentsModule,
     DisciplineModule,
-    GroupsModule, 
+    GroupsModule,
     StudentLeadershipModule,
     AcademicYearsModule,
     TermsModule,
@@ -149,7 +150,7 @@ import { AuthGuard } from './auth/guards/access-token.guard';
     LmsModule,
     FinanceModule,
     PaymentsModule,
-    GovernanceModule, 
+    GovernanceModule,
     MeetingsModule,
     VenuesModule,
     TimetablesModule,
@@ -159,9 +160,12 @@ import { AuthGuard } from './auth/guards/access-token.guard';
     EventsModule,
     DocumentsModule,
     SupportTicketsModule,
+    TeacherAssignmentsModule,
+    StudentEnrollmentsModule,
+    //timetable slots module
+    TimetableSlotsModule,
   ],
   providers: [
-    // Your global guards are correctly configured here.
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: AuthGuard },
   ],
@@ -169,7 +173,7 @@ import { AuthGuard } from './auth/guards/access-token.guard';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    // The helmet middleware setup is correct.
-    consumer.apply(helmet()).forRoutes({ path: '/*', method: RequestMethod.ALL });
+    // UPDATED: Changed '/*' to '*' to use modern, compliant syntax for all routes.
+    consumer.apply(helmet()).forRoutes({ path: '*', method: RequestMethod.ALL });
   }
 }

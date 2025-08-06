@@ -1,4 +1,26 @@
 // src/drizzle/schema.ts
+//This  file defines the database schema using Drizzle ORM.
+//desinged to work with PostgreSQL.
+//designed  by    senior   company    developer  Eng Johnson Mwangi
+//This  schema  is  part  of  a  school management system API.
+//This  schema  is  used  to  create,  read,  update, and delete data in the database.
+//incase  of   any   bug  or  question email  senior  developer : johnsonthuraniramwangi@gmail.com
+//or our   developer  team email: jomulimited2@gmail.com
+//Managing  developers  should    ensure  that   the   schema  is  up to date with the latest requirements.
+//document all   the   changes   via    the  recommended  channels  by  the     company 
+//Always  leave  comments  to  the   changes   you  have  made  
+//   Dont   push   to  the   main  branch
+//Incase   of   any   changes  in the  schema   pushing  the  changes  to the  production   database  
+//may  alter  the   data  in the   database,  therefore  ensure  that   you  have  a  backup of the   database
+//For   development   every   developer  should    have  a  local  database  to  test the   changes   before   pushing to the   production database
+//Or  use   the  company  provided  database  for   development  and   testing 
+//In  violation   of   this   you  are   going  against  the  code   of  the    company   and   therefore    you   shall  be   responsible  
+//for  any   data  loss  or   corruption  that   may   occur  in the   production database
+//Always   ensure   the   code  you   write  is  well  tested  and   follows the   company  coding standards
+//Always   ensure   the   code  you   write  is  well  documented  and   follows the   company  documentation standards
+// Always   ensure   the   code  you   write  is  well  structured  and   follows the   company  coding standards
+//Code   reviews   must  be  done  by  our   QA team before   merging  to the   main  branch  and   the   responsible  developers  for  this 
+//Report  anything  that   is  not  clear  to the   senior  developer  Eng Johnson Mwangi  or   relevant  team members  lend  by   Jomu Limited
 
 import { relations } from "drizzle-orm";
 import { pgTable, pgEnum, serial, varchar, timestamp, integer, decimal, text, index, uniqueIndex, boolean, primaryKey, bigint, jsonb } from "drizzle-orm/pg-core";
@@ -7,6 +29,9 @@ import { IsOptional } from 'class-validator';
 // ============================================
 //                   Enums
 // ============================================
+//This  section   entails  the   enums  used  in  the  schema. 
+//All   enums  are  defined   here.
+
 
 export const genderEnum = pgEnum("gender", ['male', 'female', 'other']);
 export const schoolRoleEnum = pgEnum("school_role", ['super_admin', 'school_admin', 'dos', 'teacher', 'student', 'parent', 'accountant', 'librarian', 'kitchen_staff', 'groundsman', 'support_staff', 'board_member']);
@@ -32,12 +57,18 @@ export const questionTypeEnum = pgEnum("question_type", ['multiple_choice', 'tru
 export const subscriptionStatusEnum = pgEnum("subscription_status", ['trialing', 'active', 'past_due', 'canceled', 'unpaid']);
 export const planIntervalEnum = pgEnum("plan_interval", ['month', 'year']);
 export const platformInvoiceStatusEnum = pgEnum("platform_invoice_status", ['draft', 'open', 'paid', 'uncollectible', 'void']);
-
+//SYSTEM TABLES 
+//in  this   section    all  tables  are   defined   and   there   enteries  are   defined   here
+//any   addition    of  a  new  table  must   be   at  the   bottom   of   the  tables   or   as   the last  most  table of its  domain  section 
+//  and   document  it   correctly
+//dont   push  any   changes   before  testing   and    reviewing  the   changes   with   the   senior  developers
 
 // ============================================
 //         Platform Subscription & Billing
 // ============================================
 // This section handles how schools subscribe and pay OUR company for using the platform.
+//This   layer  is  for  the   platform  subscription  and   billing  management.  
+//All  tables  related  to  platform  subscription  and   billing  are   defined   here.
 
 export interface PlanFeatures { canUseLms: boolean; maxStudents: number; supportLevel: 'basic' | 'priority'; canUseAdvancedReports: boolean; }
 export const planTable = pgTable("planTable", {
@@ -89,6 +120,8 @@ export const platformPaymentTable = pgTable("platformPaymentTable", {
 //      School-Specific Third-Party Config
 // ============================================
 // This section handles the keys each school provides for THEIR payment integrations.
+//This   layer  is  for  the   school-specific  third-party  configuration management.
+//All  tables  related  to  school-specific  third-party  configuration are   defined   here.
 
 export interface MpesaCredentials { consumerKey: string; consumerSecret: string; passKey: string; shortCode: string; environment: 'sandbox' | 'live'; }
 export interface StripeCredentials { secretKey: string; webhookSecret: string; }
@@ -107,6 +140,9 @@ export const schoolConfigurationTable = pgTable("schoolConfigurationTable", {
 // ============================================
 //         Core Architecture & Org Chart
 // ============================================
+// This section defines the core architecture of the school and its organizational chart.
+//This   layer  is  for  the   core architecture and organizational chart management.
+//All  tables related   are   defined   here
 
 export interface SchoolSettings { isChatEnabled: boolean; isParentPortalEnabled: boolean; reportCardTemplate: 'template_a' | 'template_b'; requireConsentForTrips: boolean; ipWhitelist: string[] | null; }
 export const schoolTable = pgTable("schoolTable", {
@@ -182,6 +218,7 @@ export const functionalAssignmentTable = pgTable("functionalAssignmentTable", {
 // ============================================
 //         Student, Parent & Community
 // ============================================
+//This  
 
 export const studentTable = pgTable("studentTable", {
     student_id: serial("student_id").primaryKey(),
@@ -387,7 +424,7 @@ export const studentAnswerTable = pgTable("studentAnswerTable", {
 export const academicYearTable = pgTable("academicYearTable", {
     year_id: serial("year_id").primaryKey(),
     school_id: integer("school_id").notNull().references(() => schoolTable.school_id, { onDelete: "cascade" }),
-    year_name: varchar("year_name", { length: 50 }).notNull(),
+    year_name: varchar("year_name", { length: 160 }).notNull(),
     start_date: timestamp("start_date", { mode: 'date' }).notNull(),
     end_date: timestamp("end_date", { mode: 'date' }).notNull(),
     archived_at: timestamp("archived_at", { withTimezone: true }),
@@ -396,7 +433,7 @@ export const academicYearTable = pgTable("academicYearTable", {
 export const termTable = pgTable("termTable", {
     term_id: serial("term_id").primaryKey(),
     academic_year_id: integer("academic_year_id").notNull().references(() => academicYearTable.year_id, { onDelete: "cascade" }),
-    term_name: varchar("term_name", { length: 50 }).notNull(),
+    term_name: varchar("term_name", { length: 160 }).notNull(),
     start_date: timestamp("start_date", { mode: 'date' }).notNull(),
     end_date: timestamp("end_date", { mode: 'date' }).notNull(),
     archived_at: timestamp("archived_at", { withTimezone: true }),
@@ -414,7 +451,7 @@ export const classTable = pgTable("classTable", {
 export const subjectTable = pgTable("subjectTable", {
     subject_id: serial("subject_id").primaryKey(),
     school_id: integer("school_id").notNull().references(() => schoolTable.school_id, { onDelete: "cascade" }),
-    subject_name: varchar("subject_name", { length: 100 }).notNull(),
+    subject_name: varchar("subject_name", { length: 160 }).notNull(),
     subject_code: varchar("subject_code", { length: 20 }),
     archived_at: timestamp("archived_at", { withTimezone: true }),
 });
@@ -690,16 +727,27 @@ export const auditLogTable = pgTable("auditLogTable", {
     created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
+// --- BEFORE THE FIX ---
 export const passwordResetTokenTable = pgTable("passwordResetTokenTable", {
   id: serial("id").primaryKey(),
   token: varchar("token", { length: 255 }).notNull().unique(),
-  user_id: integer("user_id").notNull().references(() => userTable.user_id, { onDelete: "cascade" }),
+  user_id: integer("user_id").notNull().references(() => userTable.user_id, { onDelete: "cascade" }), // <--- THIS IS THE LINE TO CHANGE
   expires_at: timestamp("expires_at", { withTimezone: true }).notNull(),
-});
+  created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  tokenIndex: uniqueIndex("prt_token_idx").on(table.token),
+  userIdIndex: index("prt_user_id_idx").on(table.user_id), // This is just an index, not a unique constraint
+}));
 
 // =================================================================================
 //                        COMPLETE RELATIONSHIPS DEFINITION
 // =================================================================================
+//this   are   relationship   definitions for   the  schema tables  defined    above   ,    this   relations  are  
+// used to define how tables are related to each other in the database schema
+//The  application  is  not   tied    to  fixed    tables  and   relationship   ,    this   can    grow  up   incrementally     
+//   the    structure   below    is  ready  for  that    .Every developer    should  know    that   the  fellow  updated   activities should   be   documented 
+//this     will  ensure smooth   follow  up  by  other    developers   in   cherge  of  development  and maintenance  
+
 
 // --- Platform Billing ---
 export const planRelations = relations(planTable, ({ many }) => ({
@@ -1067,7 +1115,11 @@ export const passwordResetTokenRelations = relations(passwordResetTokenTable, ({
 }));
 
 // ============================================
-//         Inferred Types for ALL Tables
+//         Inferred Types for ALL Tables,   this   are   types   for  each    table   with  regard  to  the    data  being   sent  by  the  user  and  the    data    being  sent
+//by    the  sever   or the   api   or  the    database    in  general   ,    developers  should    follow   best   practices   for   data   validation   and   error   handling
+//  this  will   help   ensure   that   the   data   being   sent   is   valid   and   can   be   processed   correctly
+//         and   that   the   data   being   received   is   valid   and   can   be   processed   correctly
+//this    will   ensure   integrety   in  transactions   and   data   flow   in  the    system
 // ============================================
 export type TNewUser = typeof userTable.$inferInsert; export type TNewSchool = typeof schoolTable.$inferInsert;
 export type TPlanInsert = typeof planTable.$inferInsert; export type TPlanSelect = typeof planTable.$inferSelect;
