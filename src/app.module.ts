@@ -55,6 +55,7 @@ import { TeacherAssignmentsModule } from './teacher-assignments/teacher-assignme
 import { StudentEnrollmentsModule } from './student-enrollment/student-enrollment.module';
 import { TimetableSlotsModule } from './timetable-slots/timetable-slots.module';
 import { TeacherPreferencesModule } from './teacher-preferences/teacher-preferences.module';
+import { SubjectRequirementsModule } from './subject-requirements/subject-requirements.module';
 
 // --- Guards ---
 import { AuthGuard } from './auth/guards/access-token.guard';
@@ -167,6 +168,8 @@ import { AuthGuard } from './auth/guards/access-token.guard';
     TimetableSlotsModule,
     // Teacher Preferences Module
     TeacherPreferencesModule,
+    //subject requirements module
+    SubjectRequirementsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

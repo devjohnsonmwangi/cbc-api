@@ -17,7 +17,7 @@ import { DRIZZLE_ORM_TOKEN } from '../drizzle/drizzle.constants';
 import * as schema from '../drizzle/schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { SchoolService } from '../schools/schools.service'; // CORRECTED PATH
+import { SchoolService } from '../schools/schools.service';
 import { TUserSelect } from '../drizzle/schema';
 
 type FullUserWithRoles = TUserSelect & { roles: { role: string }[] };
@@ -29,44 +29,19 @@ export class UserService {
   constructor(
     @Inject(DRIZZLE_ORM_TOKEN) private db: DrizzleDB,
     private readonly schoolService: SchoolService,
-    private readonly configService: ConfigService, // Inject ConfigService
+    private readonly configService: ConfigService,
   ) {
-    // Load salt rounds from config for better security management
     this.saltRounds = parseInt(this.configService.get<string>('PASSWORD_SALT_ROUNDS', '10'));
   }
 
-  /**
-   * Hashes a plain text password using bcrypt.
-   * @param password The plain text password.
-   * @returns A promise that resolves to the hashed password.
-   */
   private async _hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, this.saltRounds);
   }
 
-  /**
-   * Helper function to remove sensitive fields from user object before returning to client.
-   * @param user The user object from the database.
-   * @returns A secure user object without password or 2FA secret.
-   */
   private _secureUser(user: any) {
     const { password, two_factor_secret, ...secureUser } = user;
     return secureUser;
   }
-//this   is  an   asnchronous function that creates a new user in the database. 
-//this   what  it  does 
-  /**
-   * Creates a new user in the database.
-   * @param createUserDto The data transfer object containing user details.
-   * @param creatorRoles The roles of the user creating this new user.
-   * @returns The newly created user object, secured without sensitive fields.
-   */
-//note   to  developers:
-  // Ensure that the creator has the necessary permissions to create users with specific roles.
-  // Implement role-based access control to prevent unauthorized user creation.
-  // Validate the input data thoroughly to prevent SQL injection and other security issues.
-
-
 
   async create(createUserDto: CreateUserDto, creatorRoles: string[]) {
     const { roles, ...userData } = createUserDto;
@@ -79,7 +54,7 @@ export class UserService {
       if (userData.school_id) {
         throw new BadRequestException('Super admins cannot be assigned to a school.');
       }
-      userData.school_id = undefined; // Correctly set to undefined for the database
+      (userData as any).school_id = null; // Ensure it's null, not undefined
     } else {
       if (!userData.school_id) {
         throw new BadRequestException('A school_id is required for non-super_admin roles.');
@@ -99,20 +74,41 @@ export class UserService {
 
     const newUser = await this.db.transaction(async (tx) => {
       const [insertedUser] = await tx.insert(schema.userTable).values(userToInsert).returning();
-      const rolesToInsert = roles.map((role) => ({ user_id: insertedUser.user_id, role }));
-      await tx.insert(schema.userRoleLinkTable).values(rolesToInsert);
+      if (roles && roles.length > 0) {
+        const rolesToInsert = roles.map((role) => ({ user_id: insertedUser.user_id, role }));
+        await tx.insert(schema.userRoleLinkTable).values(rolesToInsert);
+      }
       return insertedUser;
     });
 
     return this._secureUser(newUser);
   }
 
-  async findAllBySchool(schoolId: number) {
+  /**
+   * Finds all non-archived users for a given school.
+   * Can optionally filter to only include users with a specific role.
+   * @param schoolId - The ID of the school.
+   * @param options - Optional: Specify `withRole` to filter by a user role (e.g., 'teacher').
+   * @returns A list of secure user objects.
+   */
+  async findAllBySchool(schoolId: number, options: { withRole?: string } = {}) {
+    // Base query to get all users in the school with their roles
     const users = await this.db.query.userTable.findMany({
       where: and(eq(schema.userTable.school_id, schoolId), isNull(schema.userTable.archived_at)),
       with: { roles: { columns: { role: true } } },
       orderBy: (table, { asc }) => [asc(table.full_name)],
     });
+
+    // If the withRole option is provided, perform a JavaScript filter on the results.
+    // This is efficient for a reasonable number of users per school.
+    if (options.withRole) {
+        const filteredUsers = users.filter(user => 
+            user.roles.some(r => r.role === options.withRole)
+        );
+        return filteredUsers.map(this._secureUser);
+    }
+
+    // If no role filter is specified, return all users.
     return users.map(this._secureUser);
   }
 
@@ -128,12 +124,6 @@ export class UserService {
     return this._secureUser(user);
   }
   
-  /**
-   * Finds a user by email for internal auth. Returns the full user object including password hash.
-   * This method intentionally does NOT throw a 'NotFoundException' to prevent email enumeration.
-   * @param email The user's email.
-   * @returns The full user object or undefined if not found.
-   */
   async findOneByEmail(email: string): Promise<FullUserWithRoles | undefined> {
     return this.db.query.userTable.findFirst({
       where: and(eq(schema.userTable.email, email), isNull(schema.userTable.archived_at)),
@@ -163,6 +153,11 @@ export class UserService {
         where: eq(schema.userTable.user_id, id),
         with: { roles: { columns: { role: true } } },
       });
+
+      if (!finalUser) {
+        // This case should theoretically not happen if findOne(id) succeeds, but it's a good safeguard.
+        throw new NotFoundException(`User with ID ${id} could not be found after update.`);
+      }
 
       return this._secureUser(finalUser);
     });
