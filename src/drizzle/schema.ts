@@ -56,10 +56,16 @@ export const platformInvoiceStatusEnum = pgEnum("platform_invoice_status", ['dra
 export const availabilityStatusEnum = pgEnum("availability_status", ['preferred', 'available', 'unavailable']);
 export const timetableTypeEnum = pgEnum("timetable_type", ['lesson', 'exam', 'event']);
 export const timetableStatusEnum = pgEnum("timetable_status", ['draft', 'published', 'archived']);
+export const announcementChannelEnum = pgEnum("announcement_channel", ['dashboard', 'email', 'sms']);
+export const announcementAudienceEnum = pgEnum("announcement_audience", [ 'all_users', 'all_staff', 'all_parents', 'all_students', 'specific_roles', 'specific_grades', 'specific_classes', 'specific_groups', 'specific_users' ]);
+export const reminderStatusEnum = pgEnum("reminder_status", ['pending', 'sent', 'failed']); // NEW ENUM
+
 
 // ============================================
 //         Platform Subscription & Billing
 // ============================================
+
+// TABLE 1: planTable
 export interface PlanFeatures { canUseLms: boolean; maxStudents: number; supportLevel: 'basic' | 'priority'; canUseAdvancedReports: boolean; }
 export const planTable = pgTable("planTable", {
   plan_id: serial("plan_id").primaryKey(),
@@ -71,6 +77,7 @@ export const planTable = pgTable("planTable", {
   is_active: boolean("is_active").default(true).notNull(),
 });
 
+// TABLE 2: subscriptionTable
 export const subscriptionTable = pgTable("subscriptionTable", {
   subscription_id: serial("subscription_id").primaryKey(),
   school_id: integer("school_id").notNull().unique().references(() => schoolTable.school_id, { onDelete: 'cascade' }),
@@ -83,6 +90,7 @@ export const subscriptionTable = pgTable("subscriptionTable", {
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
+// TABLE 3: platformInvoiceTable
 export const platformInvoiceTable = pgTable("platformInvoiceTable", {
   invoice_id: serial("invoice_id").primaryKey(),
   subscription_id: integer("subscription_id").notNull().references(() => subscriptionTable.subscription_id, { onDelete: 'cascade' }),
@@ -94,6 +102,7 @@ export const platformInvoiceTable = pgTable("platformInvoiceTable", {
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
+// TABLE 4: platformPaymentTable
 export const platformPaymentTable = pgTable("platformPaymentTable", {
   payment_id: serial("payment_id").primaryKey(),
   platform_invoice_id: integer("platform_invoice_id").notNull().references(() => platformInvoiceTable.invoice_id, { onDelete: 'cascade' }),
@@ -108,9 +117,10 @@ export const platformPaymentTable = pgTable("platformPaymentTable", {
 // ============================================
 //      School-Specific Third-Party Config
 // ============================================
+
+// TABLE 5: schoolConfigurationTable
 export interface MpesaCredentials { consumerKey: string; consumerSecret: string; passKey: string; shortCode: string; environment: 'sandbox' | 'live'; }
 export interface StripeCredentials { secretKey: string; webhookSecret: string; }
-
 export const schoolConfigurationTable = pgTable("schoolConfigurationTable", {
     config_id: serial("config_id").primaryKey(),
     school_id: integer("school_id").notNull().unique().references(() => schoolTable.school_id, { onDelete: "cascade" }),
@@ -124,6 +134,8 @@ export const schoolConfigurationTable = pgTable("schoolConfigurationTable", {
 // ============================================
 //         Core Architecture & Org Chart
 // ============================================
+
+// TABLE 6: schoolTable
 export interface SchoolSettings { isChatEnabled: boolean; isParentPortalEnabled: boolean; reportCardTemplate: 'template_a' | 'template_b'; requireConsentForTrips: boolean; ipWhitelist: string[] | null; }
 export const schoolTable = pgTable("schoolTable", {
   school_id: serial("school_id").primaryKey(),
@@ -138,6 +150,7 @@ export const schoolTable = pgTable("schoolTable", {
   archived_at: timestamp("archived_at", { withTimezone: true }),
 });
 
+// TABLE 7: userTable
 export const userTable = pgTable("userTable", {
   user_id: serial("user_id").primaryKey(),
   full_name: varchar("full_name").notNull(),
@@ -153,11 +166,13 @@ export const userTable = pgTable("userTable", {
   archived_at: timestamp("archived_at", { withTimezone: true }),
 });
 
+// TABLE 8: userRoleLinkTable
 export const userRoleLinkTable = pgTable("userRoleLinkTable", {
     user_id: integer("user_id").notNull().references(() => userTable.user_id, { onDelete: 'cascade' }),
     role: schoolRoleEnum("role").notNull(),
 }, (table) => ({ pk: primaryKey({ columns: [table.user_id, table.role] }) }));
 
+// TABLE 9: positionTable
 export const positionTable = pgTable("positionTable", {
     position_id: serial("position_id").primaryKey(),
     school_id: integer("school_id").notNull().references(() => schoolTable.school_id, { onDelete: 'cascade' }),
@@ -169,6 +184,7 @@ export const positionTable = pgTable("positionTable", {
     archived_at: timestamp("archived_at", { withTimezone: true }),
 });
 
+// TABLE 10: departmentTable
 export const departmentTable = pgTable("departmentTable", {
     department_id: serial("department_id").primaryKey(),
     school_id: integer("school_id").notNull().references(() => schoolTable.school_id, { onDelete: 'cascade' }),
@@ -177,6 +193,7 @@ export const departmentTable = pgTable("departmentTable", {
     archived_at: timestamp("archived_at", { withTimezone: true }),
 });
 
+// TABLE 11: departmentMembershipTable
 export const departmentMembershipTable = pgTable("departmentMembershipTable", {
     membership_id: serial("membership_id").primaryKey(),
     department_id: integer("department_id").notNull().references(() => departmentTable.department_id, { onDelete: 'cascade' }),
@@ -185,6 +202,7 @@ export const departmentMembershipTable = pgTable("departmentMembershipTable", {
     joined_at: timestamp("joined_at", { withTimezone: true }).defaultNow(),
 });
 
+// TABLE 12: functionalAssignmentTable
 export const functionalAssignmentTable = pgTable("functionalAssignmentTable", {
     assignment_id: serial("assignment_id").primaryKey(),
     manager_user_id: integer("manager_user_id").notNull().references(() => userTable.user_id, { onDelete: 'cascade' }),
@@ -198,6 +216,8 @@ export const functionalAssignmentTable = pgTable("functionalAssignmentTable", {
 // ============================================
 //         Student, Parent & Community
 // ============================================
+
+// TABLE 13: studentTable
 export const studentTable = pgTable("studentTable", {
     student_id: serial("student_id").primaryKey(),
     user_id: integer("user_id").unique().references(() => userTable.user_id, { onDelete: "set null" }),
@@ -211,11 +231,13 @@ export const studentTable = pgTable("studentTable", {
     archived_at: timestamp("archived_at", { withTimezone: true }),
 }, (table) => ({ uniqueAdmNoPerSchool: uniqueIndex("school_admission_no_idx").on(table.school_id, table.admission_number) }));
 
+// TABLE 14: parentStudentLinkTable
 export const parentStudentLinkTable = pgTable("parentStudentLinkTable", {
     parent_user_id: integer("parent_user_id").notNull().references(() => userTable.user_id, { onDelete: 'cascade' }),
     student_id: integer("student_id").notNull().references(() => studentTable.student_id, { onDelete: 'cascade' }),
 }, (table) => ({ pk: primaryKey({ columns: [table.parent_user_id, table.student_id] }) }));
 
+// TABLE 15: consentRequestTable
 export const consentRequestTable = pgTable("consentRequestTable", {
     request_id: serial("request_id").primaryKey(),
     school_id: integer("school_id").notNull().references(() => schoolTable.school_id, { onDelete: 'cascade' }),
@@ -228,6 +250,7 @@ export const consentRequestTable = pgTable("consentRequestTable", {
     archived_at: timestamp("archived_at", { withTimezone: true }),
 });
 
+// TABLE 16: consentResponseTable
 export const consentResponseTable = pgTable("consentResponseTable", {
     response_id: serial("response_id").primaryKey(),
     request_id: integer("request_id").notNull().references(() => consentRequestTable.request_id, { onDelete: 'cascade' }),
@@ -241,12 +264,15 @@ export const consentResponseTable = pgTable("consentResponseTable", {
 // ============================================
 //         Governance & Meetings
 // ============================================
+
+// TABLE 17: boardOfManagementTable
 export const boardOfManagementTable = pgTable("boardOfManagementTable", {
     bom_id: serial("bom_id").primaryKey(),
     school_id: integer("school_id").notNull().unique().references(() => schoolTable.school_id, { onDelete: 'cascade' }),
     name: varchar("name", { length: 255 }).notNull(),
 });
 
+// TABLE 18: boardMemberTable
 export const boardMemberTable = pgTable("boardMemberTable", {
     member_id: serial("member_id").primaryKey(),
     bom_id: integer("bom_id").notNull().references(() => boardOfManagementTable.bom_id, { onDelete: 'cascade' }),
@@ -256,6 +282,7 @@ export const boardMemberTable = pgTable("boardMemberTable", {
     term_end_date: timestamp("term_end_date", { mode: 'date' }),
 });
 
+// TABLE 19: meetingTable
 export const meetingTable = pgTable("meetingTable", {
     meeting_id: serial("meeting_id").primaryKey(),
     school_id: integer("school_id").notNull().references(() => schoolTable.school_id, { onDelete: 'cascade' }),
@@ -267,6 +294,7 @@ export const meetingTable = pgTable("meetingTable", {
     archived_at: timestamp("archived_at", { withTimezone: true }),
 });
 
+// TABLE 20: meetingAgendaItemTable
 export const meetingAgendaItemTable = pgTable("meetingAgendaItemTable", {
     item_id: serial("item_id").primaryKey(),
     meeting_id: integer("meeting_id").notNull().references(() => meetingTable.meeting_id, { onDelete: 'cascade' }),
@@ -276,6 +304,7 @@ export const meetingAgendaItemTable = pgTable("meetingAgendaItemTable", {
     allocated_time_minutes: integer("allocated_time_minutes"),
 });
 
+// TABLE 21: meetingMinutesTable
 export const meetingMinutesTable = pgTable("meetingMinutesTable", {
     minute_id: serial("minute_id").primaryKey(),
     meeting_id: integer("meeting_id").notNull().references(() => meetingTable.meeting_id, { onDelete: 'cascade' }),
@@ -285,6 +314,7 @@ export const meetingMinutesTable = pgTable("meetingMinutesTable", {
     recorded_by_user_id: integer("recorded_by_user_id").references(() => userTable.user_id, { onDelete: 'set null' }),
 });
 
+// TABLE 22: actionItemTable
 export const actionItemTable = pgTable("actionItemTable", {
     action_item_id: serial("action_item_id").primaryKey(),
     meeting_id: integer("meeting_id").notNull().references(() => meetingTable.meeting_id, { onDelete: 'cascade' }),
@@ -297,6 +327,8 @@ export const actionItemTable = pgTable("actionItemTable", {
 // ============================================
 //      Robust E-Learning / LMS Module
 // ============================================
+
+// TABLE 23: courseTable
 export const courseTable = pgTable("courseTable", {
     course_id: serial("course_id").primaryKey(),
     subject_id: integer("subject_id").notNull().references(() => subjectTable.subject_id),
@@ -307,6 +339,7 @@ export const courseTable = pgTable("courseTable", {
     archived_at: timestamp("archived_at", { withTimezone: true }),
 });
 
+// TABLE 24: courseModuleTable
 export const courseModuleTable = pgTable("courseModuleTable", {
     module_id: serial("module_id").primaryKey(),
     course_id: integer("course_id").notNull().references(() => courseTable.course_id, {onDelete: 'cascade'}),
@@ -314,6 +347,7 @@ export const courseModuleTable = pgTable("courseModuleTable", {
     order: integer("order").notNull(),
 });
 
+// TABLE 25: lessonContentTable
 export const lessonContentTable = pgTable("lessonContentTable", {
     content_id: serial("content_id").primaryKey(),
     module_id: integer("module_id").notNull().references(() => courseModuleTable.module_id, {onDelete: 'cascade'}),
@@ -324,6 +358,7 @@ export const lessonContentTable = pgTable("lessonContentTable", {
     order: integer("order").notNull(),
 });
 
+// TABLE 26: studentContentProgressTable
 export const studentContentProgressTable = pgTable("studentContentProgressTable", {
     progress_id: serial("progress_id").primaryKey(),
     student_id: integer("student_id").notNull().references(() => studentTable.student_id, {onDelete: 'cascade'}),
@@ -334,6 +369,7 @@ export const studentContentProgressTable = pgTable("studentContentProgressTable"
     studentContentUnique: uniqueIndex("student_content_unique_idx").on(table.student_id, table.content_id)
 }));
 
+// TABLE 27: assignmentTable
 export const assignmentTable = pgTable("assignmentTable", {
     assignment_id: serial("assignment_id").primaryKey(),
     content_id: integer("content_id").unique().notNull().references(() => lessonContentTable.content_id, {onDelete: 'cascade'}),
@@ -342,6 +378,7 @@ export const assignmentTable = pgTable("assignmentTable", {
     max_points: integer("max_points"),
 });
 
+// TABLE 28: studentSubmissionTable
 export const studentSubmissionTable = pgTable("studentSubmissionTable", {
     submission_id: serial("submission_id").primaryKey(),
     assignment_id: integer("assignment_id").notNull().references(() => assignmentTable.assignment_id, {onDelete: 'cascade'}),
@@ -352,6 +389,7 @@ export const studentSubmissionTable = pgTable("studentSubmissionTable", {
     feedback: text("feedback"),
 });
 
+// TABLE 29: quizTable
 export const quizTable = pgTable("quizTable", {
     quiz_id: serial("quiz_id").primaryKey(),
     content_id: integer("content_id").unique().notNull().references(() => lessonContentTable.content_id, {onDelete: 'cascade'}),
@@ -359,6 +397,7 @@ export const quizTable = pgTable("quizTable", {
     archived_at: timestamp("archived_at", { withTimezone: true }),
 });
 
+// TABLE 30: quizQuestionTable
 export const quizQuestionTable = pgTable("quizQuestionTable", {
     question_id: serial("question_id").primaryKey(),
     quiz_id: integer("quiz_id").notNull().references(() => quizTable.quiz_id, {onDelete: 'cascade'}),
@@ -367,6 +406,7 @@ export const quizQuestionTable = pgTable("quizQuestionTable", {
     order: integer("order").notNull(),
 });
 
+// TABLE 31: questionOptionTable
 export const questionOptionTable = pgTable("questionOptionTable", {
     option_id: serial("option_id").primaryKey(),
     question_id: integer("question_id").notNull().references(() => quizQuestionTable.question_id, {onDelete: 'cascade'}),
@@ -374,6 +414,7 @@ export const questionOptionTable = pgTable("questionOptionTable", {
     is_correct: boolean("is_correct").default(false).notNull(),
 });
 
+// TABLE 32: quizAttemptTable
 export const quizAttemptTable = pgTable("quizAttemptTable", {
     attempt_id: serial("attempt_id").primaryKey(),
     quiz_id: integer("quiz_id").notNull().references(() => quizTable.quiz_id, {onDelete: 'cascade'}),
@@ -383,6 +424,7 @@ export const quizAttemptTable = pgTable("quizAttemptTable", {
     score: decimal("score", { precision: 5, scale: 2 }),
 });
 
+// TABLE 33: studentAnswerTable
 export const studentAnswerTable = pgTable("studentAnswerTable", {
     answer_id: serial("answer_id").primaryKey(),
     attempt_id: integer("attempt_id").notNull().references(() => quizAttemptTable.attempt_id, {onDelete: 'cascade'}),
@@ -394,6 +436,8 @@ export const studentAnswerTable = pgTable("studentAnswerTable", {
 // ============================================
 //         Academic & Operational Core
 // ============================================
+
+// TABLE 34: academicYearTable
 export const academicYearTable = pgTable("academicYearTable", {
     year_id: serial("year_id").primaryKey(),
     school_id: integer("school_id").notNull().references(() => schoolTable.school_id, { onDelete: "cascade" }),
@@ -403,6 +447,7 @@ export const academicYearTable = pgTable("academicYearTable", {
     archived_at: timestamp("archived_at", { withTimezone: true }),
 });
 
+// TABLE 35: termTable
 export const termTable = pgTable("termTable", {
     term_id: serial("term_id").primaryKey(),
     academic_year_id: integer("academic_year_id").notNull().references(() => academicYearTable.year_id, { onDelete: "cascade" }),
@@ -412,6 +457,7 @@ export const termTable = pgTable("termTable", {
     archived_at: timestamp("archived_at", { withTimezone: true }),
 });
 
+// TABLE 36: classTable
 export const classTable = pgTable("classTable", {
     class_id: serial("class_id").primaryKey(),
     school_id: integer("school_id").notNull().references(() => schoolTable.school_id, { onDelete: "cascade" }),
@@ -421,6 +467,7 @@ export const classTable = pgTable("classTable", {
     archived_at: timestamp("archived_at", { withTimezone: true }),
 });
 
+// TABLE 37: subjectTable
 export const subjectTable = pgTable("subjectTable", {
     subject_id: serial("subject_id").primaryKey(),
     school_id: integer("school_id").notNull().references(() => schoolTable.school_id, { onDelete: "cascade" }),
@@ -429,7 +476,7 @@ export const subjectTable = pgTable("subjectTable", {
     archived_at: timestamp("archived_at", { withTimezone: true }),
 });
 
-// NEW ADDITION: Table to define explicit requirements for timetable generation
+// TABLE 38: subjectRequirementTable
 export const subjectRequirementTable = pgTable("subjectRequirementTable", {
     requirement_id: serial("requirement_id").primaryKey(),
     term_id: integer("term_id").notNull().references(() => termTable.term_id, { onDelete: 'cascade' }),
@@ -442,6 +489,7 @@ export const subjectRequirementTable = pgTable("subjectRequirementTable", {
     uniqueRequirement: uniqueIndex("term_class_subject_req_idx").on(table.term_id, table.class_id, table.subject_id),
 }));
 
+// TABLE 39: studentEnrollmentTable
 export const studentEnrollmentTable = pgTable("studentEnrollmentTable", {
     enrollment_id: serial("enrollment_id").primaryKey(),
     student_id: integer("student_id").notNull().references(() => studentTable.student_id, { onDelete: "cascade" }),
@@ -450,6 +498,7 @@ export const studentEnrollmentTable = pgTable("studentEnrollmentTable", {
     status: enrollmentStatusEnum("status").default('active').notNull(),
 }, (table) => ({ uniqueEnrollment: uniqueIndex("student_class_year_idx").on(table.student_id, table.academic_year_id) }));
 
+// TABLE 40: teacherSubjectAssignmentTable
 export const teacherSubjectAssignmentTable = pgTable("teacherSubjectAssignmentTable", {
     assignment_id: serial("assignment_id").primaryKey(),
     teacher_id: integer("teacher_id").notNull().references(() => userTable.user_id, { onDelete: "cascade" }),
@@ -457,6 +506,7 @@ export const teacherSubjectAssignmentTable = pgTable("teacherSubjectAssignmentTa
     class_id: integer("class_id").notNull().references(() => classTable.class_id, { onDelete: "cascade" }),
 }, (table) => ({ uniqueAssignment: uniqueIndex("teacher_subject_class_idx").on(table.teacher_id, table.subject_id, table.class_id) }));
 
+// TABLE 41: assessmentTable
 export const assessmentTable = pgTable("assessmentTable", {
     assessment_id: serial("assessment_id").primaryKey(),
     term_id: integer("term_id").notNull().references(() => termTable.term_id, { onDelete: "cascade" }),
@@ -474,6 +524,7 @@ export const assessmentTable = pgTable("assessmentTable", {
     assessment_date: timestamp("assessment_date", { mode: 'date' }).defaultNow().notNull(),
 }, (table) => ({ studentSubjectIdx: index("assessment_student_subject_idx").on(table.student_id, table.subject_id) }));
 
+// TABLE 42: disciplineIncidentTable
 export const disciplineIncidentTable = pgTable("disciplineIncidentTable", {
     incident_id: serial("incident_id").primaryKey(),
     student_id: integer("student_id").notNull().references(() => studentTable.student_id, { onDelete: 'cascade' }),
@@ -488,7 +539,7 @@ export const disciplineIncidentTable = pgTable("disciplineIncidentTable", {
     archived_at: timestamp("archived_at", { withTimezone: true }),
 });
 
-// MODIFIED TABLE: Added venue_type
+// TABLE 43: venueTable
 export const venueTable = pgTable("venueTable", {
     venue_id: serial("venue_id").primaryKey(),
     school_id: integer("school_id").notNull().references(() => schoolTable.school_id, { onDelete: 'cascade' }),
@@ -498,6 +549,7 @@ export const venueTable = pgTable("venueTable", {
     archived_at: timestamp("archived_at", { withTimezone: true }),
 });
 
+// TABLE 44: timetableSlotTable
 export const timetableSlotTable = pgTable("timetableSlotTable", {
     slot_id: serial("slot_id").primaryKey(),
     school_id: integer("school_id").notNull().references(() => schoolTable.school_id, { onDelete: 'cascade' }),
@@ -506,6 +558,7 @@ export const timetableSlotTable = pgTable("timetableSlotTable", {
     end_time: varchar("end_time", { length: 5 }).notNull(),
 });
 
+// TABLE 45: teacherAvailabilityTable
 export const teacherAvailabilityTable = pgTable("teacherAvailabilityTable", {
     availability_id: serial("availability_id").primaryKey(),
     teacher_id: integer("teacher_id").notNull().references(() => userTable.user_id, { onDelete: 'cascade' }),
@@ -516,6 +569,7 @@ export const teacherAvailabilityTable = pgTable("teacherAvailabilityTable", {
     uniquePreference: uniqueIndex("teacher_term_slot_idx").on(table.teacher_id, table.term_id, table.slot_id),
 }));
 
+// TABLE 46: timetableVersionTable
 export const timetableVersionTable = pgTable("timetableVersionTable", {
     version_id: serial("version_id").primaryKey(),
     term_id: integer("term_id").notNull().references(() => termTable.term_id, { onDelete: 'cascade' }),
@@ -531,6 +585,7 @@ export const timetableVersionTable = pgTable("timetableVersionTable", {
     uniqueNamePerTerm: uniqueIndex("term_name_idx").on(table.term_id, table.name),
 }));
 
+// TABLE 47: lessonTable
 export const lessonTable = pgTable("lessonTable", {
     lesson_id: serial("lesson_id").primaryKey(),
     timetable_version_id: integer("timetable_version_id").notNull().references(() => timetableVersionTable.version_id, { onDelete: 'cascade' }),
@@ -541,6 +596,7 @@ export const lessonTable = pgTable("lessonTable", {
     venue_id: integer("venue_id").references(() => venueTable.venue_id, { onDelete: 'set null' }),
 });
 
+// TABLE 48: groupTable
 export const groupTable = pgTable("groupTable", {
     group_id: serial("group_id").primaryKey(),
     school_id: integer("school_id").notNull().references(() => schoolTable.school_id, { onDelete: 'cascade' }),
@@ -552,6 +608,7 @@ export const groupTable = pgTable("groupTable", {
     archived_at: timestamp("archived_at", { withTimezone: true }),
 });
 
+// TABLE 49: groupMembershipTable
 export const groupMembershipTable = pgTable("groupMembershipTable", {
     membership_id: serial("membership_id").primaryKey(),
     group_id: integer("group_id").notNull().references(() => groupTable.group_id, { onDelete: 'cascade' }),
@@ -560,6 +617,7 @@ export const groupMembershipTable = pgTable("groupMembershipTable", {
     joined_at: timestamp("joined_at", { withTimezone: true }).defaultNow(),
 });
 
+// TABLE 50: leadershipPositionTable
 export const leadershipPositionTable = pgTable("leadershipPositionTable", {
     position_id: serial("position_id").primaryKey(),
     title: varchar("title", { length: 255 }).notNull(),
@@ -573,6 +631,8 @@ export const leadershipPositionTable = pgTable("leadershipPositionTable", {
 // ============================================
 //         Finance & Communication (School Level)
 // ============================================
+
+// TABLE 51: feeStructureTable
 export const feeStructureTable = pgTable("feeStructureTable", {
     fee_structure_id: serial("fee_structure_id").primaryKey(),
     academic_year_id: integer("academic_year_id").notNull().references(() => academicYearTable.year_id, { onDelete: "cascade" }),
@@ -582,6 +642,7 @@ export const feeStructureTable = pgTable("feeStructureTable", {
     archived_at: timestamp("archived_at", { withTimezone: true }),
 });
 
+// TABLE 52: invoiceTable
 export const invoiceTable = pgTable("invoiceTable", {
     invoice_id: serial("invoice_id").primaryKey(),
     student_id: integer("student_id").notNull().references(() => studentTable.student_id, { onDelete: "cascade" }),
@@ -594,6 +655,7 @@ export const invoiceTable = pgTable("invoiceTable", {
     created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
+// TABLE 53: paymentTable
 export const paymentTable = pgTable("paymentTable", {
   payment_id: serial("payment_id").primaryKey(),
   invoice_id: integer("invoice_id").notNull().references(() => invoiceTable.invoice_id, { onDelete: "cascade" }),
@@ -607,6 +669,7 @@ export const paymentTable = pgTable("paymentTable", {
   payment_date: timestamp("payment_date", { withTimezone: true }).defaultNow(),
 });
 
+// TABLE 54: chatConversationTable
 export const chatConversationTable = pgTable("chatConversationTable", {
   conversation_id: serial("conversation_id").primaryKey(),
   school_id: integer("school_id").references(() => schoolTable.school_id, { onDelete: "cascade" }),
@@ -617,6 +680,7 @@ export const chatConversationTable = pgTable("chatConversationTable", {
   updated_at: bigint("updated_at", { mode: 'number' }).notNull(),
 });
 
+// TABLE 55: chatParticipantTable
 export const chatParticipantTable = pgTable("chatParticipantTable", {
   user_id: integer("user_id").notNull().references(() => userTable.user_id, { onDelete: "cascade" }),
   conversation_id: integer("conversation_id").notNull().references(() => chatConversationTable.conversation_id, { onDelete: "cascade" }),
@@ -624,6 +688,7 @@ export const chatParticipantTable = pgTable("chatParticipantTable", {
   last_read_at: bigint("last_read_at", { mode: 'number' }),
 }, (table) => ({ pk: primaryKey({ columns: [table.user_id, table.conversation_id] }) }));
 
+// TABLE 56: chatMessageTable
 export const chatMessageTable = pgTable("chatMessageTable", {
   message_id: serial("message_id").primaryKey(),
   conversation_id: integer("conversation_id").notNull().references(() => chatConversationTable.conversation_id, { onDelete: "cascade" }),
@@ -632,17 +697,18 @@ export const chatMessageTable = pgTable("chatMessageTable", {
   sent_at: bigint("sent_at", { mode: 'number' }).notNull(),
 });
 
-export const notificationTable = pgTable("notificationTable", {
-  notification_id: serial("notification_id").primaryKey(),
-  recipient_user_id: integer("recipient_user_id").notNull().references(() => userTable.user_id, { onDelete: "cascade" }),
-  type: notificationTypeEnum("type").notNull(),
-  title: varchar("title", { length: 255 }),
-  message: text("message").notNull(),
-  link_url: varchar("link_url"),
-  is_read: boolean("is_read").default(false).notNull(),
-  created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+// TABLE 57: chatAttachmentTable
+export const chatAttachmentTable = pgTable("chatAttachmentTable", {
+    attachment_id: serial("attachment_id").primaryKey(),
+    message_id: integer("message_id").notNull().references(() => chatMessageTable.message_id, { onDelete: "cascade" }),
+    file_url: varchar("file_url", { length: 1024 }).notNull(),
+    file_name: varchar("file_name", { length: 255 }).notNull(),
+    file_type: varchar("file_type", { length: 100 }), 
+    file_size_bytes: integer("file_size_bytes"),
+    uploaded_at: timestamp("uploaded_at", { withTimezone: true }).defaultNow(),
 });
 
+// TABLE 58: eventTable
 export const eventTable = pgTable("eventTable", {
   event_id: serial("event_id").primaryKey(),
   school_id: integer("school_id").notNull().references(() => schoolTable.school_id, { onDelete: "cascade" }),
@@ -656,6 +722,31 @@ export const eventTable = pgTable("eventTable", {
   archived_at: timestamp("archived_at", { withTimezone: true }),
 });
 
+// TABLE 59: eventReminderTable (NEW)
+export const eventReminderTable = pgTable("eventReminderTable", {
+  reminder_id: serial("reminder_id").primaryKey(),
+  event_id: integer("event_id").notNull().references(() => eventTable.event_id, { onDelete: "cascade" }),
+  remind_at: timestamp("remind_at", { withTimezone: true }).notNull(),
+  minutes_before: integer("minutes_before").notNull(),
+  channels: jsonb("channels").$type<Array<typeof announcementChannelEnum.enumValues>>().notNull(),
+  status: reminderStatusEnum("status").default('pending').notNull(),
+  sent_at: timestamp("sent_at", { withTimezone: true }),
+  error_message: text("error_message"),
+});
+
+// TABLE 60: notificationTable
+export const notificationTable = pgTable("notificationTable", {
+  notification_id: serial("notification_id").primaryKey(),
+  recipient_user_id: integer("recipient_user_id").notNull().references(() => userTable.user_id, { onDelete: "cascade" }),
+  type: notificationTypeEnum("type").notNull(),
+  title: varchar("title", { length: 255 }),
+  message: text("message").notNull(),
+  link_url: varchar("link_url"),
+  is_read: boolean("is_read").default(false).notNull(),
+  created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// TABLE 61: documentTable
 export const documentTable = pgTable("documentTable", {
   document_id: serial("document_id").primaryKey(),
   school_id: integer("school_id").notNull().references(() => schoolTable.school_id, { onDelete: "cascade" }),
@@ -667,6 +758,7 @@ export const documentTable = pgTable("documentTable", {
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
+// TABLE 62: supportTicketTable
 export const supportTicketTable = pgTable("supportTicketTable", {
   ticket_id: serial("ticket_id").primaryKey(),
   requester_user_id: integer("requester_user_id").notNull().references(() => userTable.user_id, { onDelete: "cascade" }),
@@ -680,9 +772,39 @@ export const supportTicketTable = pgTable("supportTicketTable", {
   updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
+// TABLE 63: announcementTable
+export const announcementTable = pgTable("announcementTable", {
+    announcement_id: serial("announcement_id").primaryKey(),
+    school_id: integer("school_id").notNull().references(() => schoolTable.school_id, { onDelete: "cascade" }),
+    author_user_id: integer("author_user_id").references(() => userTable.user_id, { onDelete: "set null" }),
+    title: varchar("title", { length: 255 }).notNull(),
+    body: text("body").notNull(),
+    audience_type: announcementAudienceEnum("audience_type").notNull(),
+    audience_specifier: jsonb("audience_specifier"),
+    channels: jsonb("channels").$type<Array<typeof announcementChannelEnum.enumValues>>().notNull(),
+    scheduled_for: timestamp("scheduled_for", { withTimezone: true }).defaultNow(),
+    sent_at: timestamp("sent_at", { withTimezone: true }),
+    archived_at: timestamp("archived_at", { withTimezone: true }),
+});
+
+// TABLE 64: announcementReceiptTable
+export const announcementReceiptTable = pgTable("announcementReceiptTable", {
+    receipt_id: serial("receipt_id").primaryKey(),
+    announcement_id: integer("announcement_id").notNull().references(() => announcementTable.announcement_id, { onDelete: "cascade" }),
+    recipient_user_id: integer("recipient_user_id").notNull().references(() => userTable.user_id, { onDelete: "cascade" }),
+    is_read: boolean("is_read").default(false).notNull(),
+    read_at: timestamp("read_at", { withTimezone: true }),
+    is_acknowledged: boolean("is_acknowledged").default(false),
+    acknowledged_at: timestamp("acknowledged_at", { withTimezone: true }),
+}, (table) => ({
+    uniqueReceipt: uniqueIndex("announcement_recipient_idx").on(table.announcement_id, table.recipient_user_id),
+}));
+
 // ============================================
 //         Advanced Security Features
 // ============================================
+
+// TABLE 65: userSessionTable
 export const userSessionTable = pgTable("userSessionTable", {
     session_id: serial("session_id").primaryKey(),
     user_id: integer("user_id").notNull().unique().references(() => userTable.user_id, {onDelete: 'cascade'}),
@@ -693,6 +815,7 @@ export const userSessionTable = pgTable("userSessionTable", {
     expires_at: timestamp("expires_at", {withTimezone: true}).notNull(),
 });
 
+// TABLE 66: apiKeyTable
 export const apiKeyTable = pgTable("apiKeyTable", {
     key_id: serial("key_id").primaryKey(),
     user_id: integer("user_id").notNull().references(() => userTable.user_id, {onDelete: 'cascade'}),
@@ -705,6 +828,7 @@ export const apiKeyTable = pgTable("apiKeyTable", {
     archived_at: timestamp("archived_at", { withTimezone: true }),
 });
 
+// TABLE 67: passwordHistoryTable
 export const passwordHistoryTable = pgTable("passwordHistoryTable", {
     history_id: serial("history_id").primaryKey(),
     user_id: integer("user_id").notNull().references(() => userTable.user_id, {onDelete: 'cascade'}),
@@ -712,17 +836,20 @@ export const passwordHistoryTable = pgTable("passwordHistoryTable", {
     created_at: timestamp("created_at", {withTimezone: true}).defaultNow(),
 });
 
+// TABLE 68: permissionTable
 export const permissionTable = pgTable("permissionTable", {
     id: serial("id").primaryKey(),
     name: varchar("name", { length: 100 }).notNull().unique(),
     description: text("description"),
 });
 
+// TABLE 69: rolePermissionTable
 export const rolePermissionTable = pgTable("rolePermissionTable", {
     role: schoolRoleEnum("role").notNull(),
     permission_id: integer("permission_id").notNull().references(() => permissionTable.id, { onDelete: 'cascade' }),
 }, (table) => ({ pk: primaryKey({ columns: [table.role, table.permission_id] }) }));
 
+// TABLE 70: auditLogTable
 export const auditLogTable = pgTable("auditLogTable", {
     id: serial("id").primaryKey(),
     user_id: integer("user_id").references(() => userTable.user_id, { onDelete: 'set null' }),
@@ -736,6 +863,7 @@ export const auditLogTable = pgTable("auditLogTable", {
     created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
+// TABLE 71: passwordResetTokenTable
 export const passwordResetTokenTable = pgTable("passwordResetTokenTable", {
   id: serial("id").primaryKey(),
   token: varchar("token", { length: 255 }).notNull().unique(),
@@ -787,6 +915,7 @@ export const schoolRelations = relations(schoolTable, ({ one, many }) => ({
     meetings: many(meetingTable),
     configuration: one(schoolConfigurationTable, { fields: [schoolTable.school_id], references: [schoolConfigurationTable.school_id] }),
     subscription: one(subscriptionTable, { fields: [schoolTable.school_id], references: [subscriptionTable.school_id] }),
+    announcements: many(announcementTable),
 }));
 export const userRelations = relations(userTable, ({ one, many }) => ({
     school: one(schoolTable, { fields: [userTable.school_id], references: [schoolTable.school_id] }),
@@ -822,6 +951,8 @@ export const userRelations = relations(userTable, ({ one, many }) => ({
     sessions: many(userSessionTable),
     apiKeys: many(apiKeyTable),
     passwordHistory: many(passwordHistoryTable),
+    authoredAnnouncements: many(announcementTable),
+    announcementReceipts: many(announcementReceiptTable),
 }));
 export const userRoleLinkRelations = relations(userRoleLinkTable, ({ one }) => ({
     user: one(userTable, { fields: [userRoleLinkTable.user_id], references: [userTable.user_id] }),
@@ -1074,9 +1205,13 @@ export const chatParticipantRelations = relations(chatParticipantTable, ({ one }
     user: one(userTable, { fields: [chatParticipantTable.user_id], references: [userTable.user_id] }),
     conversation: one(chatConversationTable, { fields: [chatParticipantTable.conversation_id], references: [chatConversationTable.conversation_id] }),
 }));
-export const chatMessageRelations = relations(chatMessageTable, ({ one }) => ({
+export const chatMessageRelations = relations(chatMessageTable, ({ one, many }) => ({
     conversation: one(chatConversationTable, { fields: [chatMessageTable.conversation_id], references: [chatConversationTable.conversation_id] }),
     sender: one(userTable, { fields: [chatMessageTable.sender_id], references: [userTable.user_id] }),
+    attachments: many(chatAttachmentTable),
+}));
+export const chatAttachmentRelations = relations(chatAttachmentTable, ({ one }) => ({
+    message: one(chatMessageTable, { fields: [chatAttachmentTable.message_id], references: [chatMessageTable.message_id] }),
 }));
 export const notificationRelations = relations(notificationTable, ({ one }) => ({
     recipient: one(userTable, { fields: [notificationTable.recipient_user_id], references: [userTable.user_id] }),
@@ -1085,6 +1220,11 @@ export const eventRelations = relations(eventTable, ({ one, many }) => ({
     school: one(schoolTable, { fields: [eventTable.school_id], references: [schoolTable.school_id] }),
     creator: one(userTable, { fields: [eventTable.created_by_user_id], references: [userTable.user_id], relationName: 'eventsCreated' }),
     consentRequests: many(consentRequestTable),
+    reminders: many(eventReminderTable), // UPDATED RELATION
+}));
+// NEW RELATION
+export const eventReminderRelations = relations(eventReminderTable, ({ one }) => ({
+    event: one(eventTable, { fields: [eventReminderTable.event_id], references: [eventTable.event_id] }),
 }));
 export const documentRelations = relations(documentTable, ({ one }) => ({
     school: one(schoolTable, { fields: [documentTable.school_id], references: [schoolTable.school_id] }),
@@ -1095,6 +1235,15 @@ export const supportTicketRelations = relations(supportTicketTable, ({ one }) =>
     school: one(schoolTable, { fields: [supportTicketTable.school_id], references: [schoolTable.school_id] }),
     requester: one(userTable, { fields: [supportTicketTable.requester_user_id], references: [userTable.user_id], relationName: 'requesterTickets' }),
     assignee: one(userTable, { fields: [supportTicketTable.assignee_id], references: [userTable.user_id], relationName: 'assignedTickets' }),
+}));
+export const announcementRelations = relations(announcementTable, ({ one, many }) => ({
+    school: one(schoolTable, { fields: [announcementTable.school_id], references: [schoolTable.school_id] }),
+    author: one(userTable, { fields: [announcementTable.author_user_id], references: [userTable.user_id] }),
+    receipts: many(announcementReceiptTable),
+}));
+export const announcementReceiptRelations = relations(announcementReceiptTable, ({ one }) => ({
+    announcement: one(announcementTable, { fields: [announcementReceiptTable.announcement_id], references: [announcementTable.announcement_id] }),
+    recipient: one(userTable, { fields: [announcementReceiptTable.recipient_user_id], references: [userTable.user_id] }),
 }));
 export const userSessionRelations = relations(userSessionTable, ({ one }) => ({
     user: one(userTable, { fields: [userSessionTable.user_id], references: [userTable.user_id] }),
@@ -1179,10 +1328,14 @@ export type TPaymentInsert = typeof paymentTable.$inferInsert; export type TPaym
 export type TChatConversationInsert = typeof chatConversationTable.$inferInsert; export type TChatConversationSelect = typeof chatConversationTable.$inferSelect;
 export type TChatParticipantInsert = typeof chatParticipantTable.$inferInsert; export type TChatParticipantSelect = typeof chatParticipantTable.$inferSelect;
 export type TChatMessageInsert = typeof chatMessageTable.$inferInsert; export type TChatMessageSelect = typeof chatMessageTable.$inferSelect;
+export type TChatAttachmentInsert = typeof chatAttachmentTable.$inferInsert; export type TChatAttachmentSelect = typeof chatAttachmentTable.$inferSelect;
 export type TNotificationInsert = typeof notificationTable.$inferInsert; export type TNotificationSelect = typeof notificationTable.$inferSelect;
 export type TEventInsert = typeof eventTable.$inferInsert; export type TEventSelect = typeof eventTable.$inferSelect;
+export type TEventReminderInsert = typeof eventReminderTable.$inferInsert; export type TEventReminderSelect = typeof eventReminderTable.$inferSelect; // NEW TYPE
 export type TDocumentInsert = typeof documentTable.$inferInsert; export type TDocumentSelect = typeof documentTable.$inferSelect;
 export type TSupportTicketInsert = typeof supportTicketTable.$inferInsert; export type TSupportTicketSelect = typeof supportTicketTable.$inferSelect;
+export type TAnnouncementInsert = typeof announcementTable.$inferInsert; export type TAnnouncementSelect = typeof announcementTable.$inferSelect;
+export type TAnnouncementReceiptInsert = typeof announcementReceiptTable.$inferInsert; export type TAnnouncementReceiptSelect = typeof announcementReceiptTable.$inferSelect;
 export type TUserSessionInsert = typeof userSessionTable.$inferInsert; export type TUserSessionSelect = typeof userSessionTable.$inferSelect;
 export type TApiKeyInsert = typeof apiKeyTable.$inferInsert; export type TApiKeySelect = typeof apiKeyTable.$inferSelect;
 export type TPasswordHistoryInsert = typeof passwordHistoryTable.$inferInsert; export type TPasswordHistorySelect = typeof passwordHistoryTable.$inferSelect;
