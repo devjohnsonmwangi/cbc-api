@@ -1,4 +1,10 @@
 // src/app.module.ts
+// This module is the root of the application, importing all necessary modules
+// and configuring global settings like guards, middleware, and providers.
+//developed  and   designed by  Eng johnson Mwangi via  JOMULT initiative 
+// (https://jomult.com) for the CBC School Management System.
+// It includes domain modules for business logic and infrastructure modules for core functionalities.
+
 
 // --- All your existing imports are correct ---
 import { Module, NestModule, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
@@ -56,6 +62,9 @@ import { StudentEnrollmentsModule } from './student-enrollment/student-enrollmen
 import { TimetableSlotsModule } from './timetable-slots/timetable-slots.module';
 import { TeacherPreferencesModule } from './teacher-preferences/teacher-preferences.module';
 import { SubjectRequirementsModule } from './subject-requirements/subject-requirements.module';
+import { CoursesModule } from './courses/courses.module';
+import { CourseModulesModule } from './course-modules/course-modules.module';
+import { LessonContentsModule } from './lesson-contents/lesson-contents.module';
 
 // --- Guards ---
 import { AuthGuard } from './auth/guards/access-token.guard';
@@ -170,6 +179,12 @@ import { AuthGuard } from './auth/guards/access-token.guard';
     TeacherPreferencesModule,
     //subject requirements module
     SubjectRequirementsModule,
+    //courses module
+    CoursesModule,
+    //course modules module
+    CourseModulesModule,
+    //lesson contents module
+    LessonContentsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
