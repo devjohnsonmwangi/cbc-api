@@ -1,14 +1,14 @@
-
 import { Injectable, Inject, BadRequestException, NotFoundException, ConflictException } from '@nestjs/common';
 import { DrizzleDB } from '../drizzle/drizzle.module';
 import { DRIZZLE_ORM_TOKEN } from '../drizzle/drizzle.constants';
-import { invoiceTable, TInvoiceSelect, studentEnrollmentTable, feeStructureTable } from '../drizzle/schema';
-import { eq, and, sql, isNull, inArray } from 'drizzle-orm';
+import { invoiceTable, TInvoiceSelect, studentEnrollmentTable, feeStructureTable, paymentTable, parentStudentLinkTable, studentTable } from '../drizzle/schema';
+import { eq, and, sql, isNull, inArray, lt, sum, count, ne, gte, lte, asc } from 'drizzle-orm';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { StudentsService } from '../students/students.service';
 import { TermService } from '../terms/terms.service';
 import { StudentEnrollmentsService } from '../student-enrollment/student-enrollment.service';
+import { UserService } from '../users/users.service';
 
 @Injectable()
 export class InvoicesService {
@@ -17,15 +17,16 @@ export class InvoicesService {
     private readonly studentsService: StudentsService,
     private readonly termsService: TermService,
     private readonly studentEnrollmentsService: StudentEnrollmentsService,
+    private readonly userService: UserService,
   ) {}
 
-  /**
-   * Creates a single, manual invoice for a student.
-   */
+  // ========================================================================
+  // CORE CRUD OPERATIONS
+  // ========================================================================
+
   async create(createDto: CreateInvoiceDto): Promise<TInvoiceSelect> {
     const { student_id, term_id } = createDto;
 
-    // Validation 1: Ensure student and term exist.
     await Promise.all([
         this.studentsService.findOne(student_id),
         this.termsService.findOne(term_id),
@@ -33,7 +34,6 @@ export class InvoicesService {
         throw new BadRequestException(`Invalid student or term ID: ${err.message}`);
     });
 
-    // Validation 2: Prevent duplicate invoices for the same student in the same term.
     const existingInvoice = await this.db.query.invoiceTable.findFirst({
         where: and(
             eq(invoiceTable.student_id, student_id),
@@ -49,9 +49,6 @@ export class InvoicesService {
     return newInvoice;
   }
 
-  /**
-   * Retrieves a single invoice by its ID with full details.
-   */
   async findOne(id: number): Promise<any> {
     const invoice = await this.db.query.invoiceTable.findFirst({
         where: eq(invoiceTable.invoice_id, id),
@@ -63,9 +60,6 @@ export class InvoicesService {
     return invoice;
   }
   
-  /**
-   * Finds all invoices for a specific student.
-   */
   async findAllByStudent(studentId: number): Promise<any[]> {
       await this.studentsService.findOne(studentId);
       return this.db.query.invoiceTable.findMany({
@@ -75,9 +69,6 @@ export class InvoicesService {
       });
   }
 
-  /**
-   * Updates an existing invoice.
-   */
   async update(id: number, updateDto: UpdateInvoiceDto): Promise<TInvoiceSelect> {
     await this.findOne(id);
     const dataToUpdate: { [key: string]: any } = { ...updateDto };
@@ -88,17 +79,9 @@ export class InvoicesService {
   }
 
   // ========================================================================
-  // BULK OPERATIONS - PRODUCTION POWERHOUSE
+  // BULK GENERATION OPERATIONS
   // ========================================================================
 
-  /**
-   * Automatically generates invoices for all actively enrolled students in a given class for a specific term.
-   * It fetches the correct fee amount from the fee structure.
-   * @param classId - The ID of the class to generate invoices for.
-   * @param termId - The ID of the term.
-   * @param dueDate - The due date for all generated invoices.
-   * @returns A summary of the generation process.
-   */
   async generateInvoicesForClass(classId: number, termId: number, dueDate: string): Promise<{ message: string, generated_count: number, skipped_count: number }> {
       const term = await this.termsService.findOne(termId, { with: { academicYear: true } });
       const academicYearId = term.academic_year_id;
@@ -110,7 +93,6 @@ export class InvoicesService {
       }
       const gradeLevel = activeStudents[0].class.grade_level;
 
-      // Find the fee structure for this grade level and year
       const feeStructure = await this.db.query.feeStructureTable.findFirst({
           where: and(
               eq(feeStructureTable.academic_year_id, academicYearId),
@@ -122,14 +104,12 @@ export class InvoicesService {
           throw new NotFoundException(`No active fee structure found for ${gradeLevel} in the academic year ${term.academicYear.year_name}.`);
       }
       
-      // Assume fees are paid per term, so divide annual fee by 3 (can be made more complex)
       const termAmount = (parseFloat(feeStructure.total_amount) / 3).toFixed(2);
       const formattedDueDate = new Date(dueDate);
 
       const invoicesToCreate: any[] = [];
       let skipped_count = 0;
 
-      // Check which students in this class already have an invoice for this term
       const studentIds = activeStudents.map(e => e.student_id);
       const existingInvoices = await this.db.query.invoiceTable.findMany({
           where: and(inArray(invoiceTable.student_id, studentIds), eq(invoiceTable.term_id, termId))
@@ -139,14 +119,14 @@ export class InvoicesService {
       for (const enrollment of activeStudents) {
           if (studentsWithInvoices.has(enrollment.student_id)) {
               skipped_count++;
-              continue; // Skip if already invoiced
+              continue;
           }
           invoicesToCreate.push({
               student_id: enrollment.student_id,
               term_id: termId,
               amount_due: termAmount,
               due_date: formattedDueDate,
-              notes: `Auto-generated invoice for ${term.term_name}, ${term.academicYear.year_name}.`
+              notes: `Auto-generated for ${term.term_name}, ${term.academicYear.year_name}.`
           });
       }
 
@@ -159,5 +139,136 @@ export class InvoicesService {
           generated_count: invoicesToCreate.length,
           skipped_count: skipped_count,
       };
+  }
+
+  // ========================================================================
+  // ADVANCED ANALYTICAL & OPERATIONAL QUERIES
+  // ========================================================================
+
+  /**
+   * Generates a high-level financial summary for a given term.
+   */
+  async getFinancialOverview(termId: number): Promise<any> {
+    const result = await this.db.select({
+        totalInvoiced: sum(invoiceTable.amount_due).mapWith(Number),
+        totalPaid: sum(invoiceTable.amount_paid).mapWith(Number),
+        invoiceCount: count(invoiceTable.invoice_id)
+    }).from(invoiceTable).where(eq(invoiceTable.term_id, termId));
+
+    const { totalInvoiced, totalPaid, invoiceCount } = result[0];
+    const totalOutstanding = totalInvoiced - totalPaid;
+
+    return {
+        term_id: termId,
+        total_invoiced: totalInvoiced || 0,
+        total_paid: totalPaid || 0,
+        total_outstanding: totalOutstanding || 0,
+        total_invoices: invoiceCount || 0
+    };
+  }
+
+  /**
+   * Finds all invoices that are past their due date and not fully paid.
+   */
+  async findOverdueInvoices(schoolId: number): Promise<any[]> {
+      const today = new Date();
+      return this.db.query.invoiceTable.findMany({
+          where: and(
+              lt(invoiceTable.due_date, today),
+              ne(invoiceTable.status, 'paid'),
+              inArray(invoiceTable.student_id, 
+                (await this.db.query.studentTable.findMany({
+                  where: eq(sql`school_id`, schoolId),
+                  columns: { student_id: true }
+                })).map(s => s.student_id)
+              )
+          ),
+          with: {
+              student: { with: { userAccount: true, parentLinks: { with: { parent: true } } } },
+              term: true
+          },
+          orderBy: (i, { asc }) => [asc(i.due_date)]
+      });
+  }
+  
+  /**
+   * Generates a complete financial statement for a parent, covering all their children.
+   */
+  async getParentFinancialStatement(parentUserId: number): Promise<any> {
+      const parent = await this.userService.findOne(parentUserId);
+      const parentLinks = await this.db.query.parentStudentLinkTable.findMany({
+          where: eq(parentStudentLinkTable.parent_user_id, parentUserId),
+          with: { student: { with: { userAccount: true } } }
+      });
+      if (parentLinks.length === 0) {
+          return { parent, children_statements: [] };
+      }
+      
+      const studentIds = parentLinks.map(link => link.student.student_id);
+      
+      const allInvoices = await this.db.query.invoiceTable.findMany({
+          where: inArray(invoiceTable.student_id, studentIds),
+          with: { payments: true, term: true },
+          orderBy: (i, { desc }) => [desc(i.created_at)]
+      });
+
+      const statements = parentLinks.map(link => {
+          const childInvoices = allInvoices.filter(inv => inv.student_id === link.student.student_id);
+          return {
+              student_id: link.student.student_id,
+              student_name: link.student.userAccount?.full_name || `Student #${link.student.admission_number}`,
+              invoices: childInvoices
+          };
+      });
+
+      return { parent, children_statements: statements };
+  }
+
+  /**
+   * Provides a summary of payments for reconciliation, filterable by date and gateway.
+   */
+  async getPaymentReconciliationReport(schoolId: number, startDate: string, endDate: string, gateway?: typeof paymentTable.payment_gateway.enumValues[number]): Promise<any> {
+      const conditions = [
+          gte(paymentTable.payment_date, new Date(startDate)),
+          lte(paymentTable.payment_date, new Date(endDate)),
+      ];
+      if (gateway) {
+          conditions.push(eq(paymentTable.payment_gateway, gateway));
+      }
+
+      // Join paymentTable with invoiceTable and studentTable to filter by school_id
+      const payments = await this.db.select({
+          payment_id: paymentTable.payment_id,
+          payment_amount: paymentTable.payment_amount,
+          payment_date: paymentTable.payment_date,
+          payment_gateway: paymentTable.payment_gateway,
+          invoice_id: paymentTable.invoice_id,
+          student_id: studentTable.student_id,
+          student_name: studentTable.admission_number,
+          invoice_amount_due: invoiceTable.amount_due,
+      })
+          .from(paymentTable)
+          .innerJoin(invoiceTable, eq(paymentTable.invoice_id, invoiceTable.invoice_id))
+          .innerJoin(studentTable, eq(invoiceTable.student_id, studentTable.student_id))
+          .where(and(
+              eq(studentTable.school_id, schoolId),
+              ...conditions
+          ))
+          .orderBy(asc(paymentTable.payment_date));
+
+      type Gateway = typeof paymentTable.payment_gateway.enumValues[number];
+      type Summary = Record<Gateway, { total_amount: number; count: number }>;
+
+      const summary = payments.reduce((acc: Summary, p) => {
+          const key = p.payment_gateway as Gateway;
+          if (!acc[key]) {
+              acc[key] = { total_amount: 0, count: 0 };
+          }
+          acc[key].total_amount += parseFloat(p.payment_amount);
+          acc[key].count++;
+          return acc;
+      }, {} as Summary);
+
+      return { summary, payments };
   }
 }

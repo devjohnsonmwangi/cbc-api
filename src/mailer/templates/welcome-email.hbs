@@ -1,60 +1,114 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <meta name="x-apple-disable-message-reformatting">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
+    <title>Welcome! Please Confirm Your Account</title>
+    <!--[if mso]>
+    <xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>
     <style>
-        /* Base styles - Identical to the password reset for consistency */
-        body { margin: 0; padding: 0; background-color: #f4f4f7; font-family: Arial, sans-serif; }
-        .container { width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .header { background-color: #28a745; color: #ffffff; padding: 20px; text-align: center; } /* Green for success */
-        .header img { max-width: 150px; }
-        .content { padding: 30px; line-height: 1.6; color: #333333; }
-        .content h1 { color: #28a745; }
-        .button-container { text-align: center; margin: 20px 0; }
-        .button { display: inline-block; padding: 14px 28px; font-size: 16px; font-weight: bold; color: #ffffff !important; background-color: #28a745; text-decoration: none; border-radius: 5px; }
-        .footer { background-color: #f4f4f7; padding: 20px; text-align: center; font-size: 12px; color: #777777; }
-        .footer a { color: #007bff; text-decoration: none; }
+      td,th,div,p,a,h1,h2,h3,h4,h5,h6 {font-family: "Segoe UI", sans-serif; mso-line-height-rule: exactly;}
+    </style>
+    <![endif]-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" media="screen">
+    <style>
+      /* This style block is for clients that support it, but all critical styles are inlined below. */
+      .hover-lift:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+      }
     </style>
 </head>
-<body style="background-color: #f4f4f7;">
-    <table width="100%" border="0" cellspacing="0" cellpadding="20" style="background-color: #f4f4f7;">
-        <tr>
-            <td>
-                <table class="container" border="0" cellspacing="0" cellpadding="0" align="center">
-                    <!-- Header -->
-                    <tr>
-                        <td class="header">
-                            <img src="https://your-logo-url.com/logo.png" alt="Your App Logo">
-                        </td>
-                    </tr>
-                    <!-- Content -->
-                    <tr>
-                        <td class="content">
-                            <h1>Welcome to Your App!</h1>
-                            <p>Hello {{ name }},</p>
-                            <p>We're thrilled to have you on board! To get started and secure your account, please verify your email address by clicking the button below.</p>
-                            <div class="button-container">
-                                <a href="{{ url }}" class="button">Verify Your Account</a>
-                            </div>
-                            <p>This verification link is valid for 24 hours.</p>
-                            <p>If you did not create an account, no further action is required.</p>
-                        </td>
-                    </tr>
+<body style="margin: 0; padding: 0; width: 100%; word-break: break-word; -webkit-font-smoothing: antialiased; background-color: #f1f5f9;">
+    <div role="article" aria-roledescription="email" aria-label="Welcome Email" lang="en">
+        <table style="width: 100%; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;" cellpadding="0" cellspacing="0" role="presentation">
+            <tr>
+                <td align="center" style="background-color: #f1f5f9; padding-top: 40px; padding-bottom: 40px;" >
+                    <table class="hover-lift" style="width: 94%; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); transition: all 0.3s ease-in-out;" cellpadding="0" cellspacing="0" role="presentation">
+                        
+                        <!-- Header with Icon -->
+                        <tr>
+                            <td style="text-align: center; padding: 32px 0;">
+                                <img src="https://raw.githubusercontent.com/tabler/tabler-icons/master/packages/icons-png/128x128/circle-check.png" alt="Verification Checkmark Icon" style="border: 0; max-width: 80px;">
+                            </td>
+                        </tr>
+                        
+                        <!-- Main Content -->
+                        <tr>
+                            <td style="padding: 0 40px 40px 40px;">
+                                <h1 style="margin: 0 0 16px; font-size: 28px; font-weight: 700; color: #1e293b; text-align: center;">One Last Step...</h1>
+                                <p style="margin: 0 0 24px; color: #475569; font-size: 16px; line-height: 1.6; text-align: center;">
+                                    Hi <strong style="color: #1e293b;">{{ name }}</strong>, welcome to the platform! Please verify your email address to unlock all features and secure your account.
+                                </p>
+                                
+                                <!-- Call-to-Action Button -->
+                                <table style="width: 100%;" cellpadding="0" cellspacing="0" role="presentation">
+                                    <tr>
+                                        <td align="center">
+                                            <a href="{{ url }}" target="_blank" style="display: inline-block; padding: 16px 36px; font-size: 16px; font-weight: 500; text-decoration: none; color: #ffffff; background-image: linear-gradient(120deg, #10b981 0%, #34d399 100%); border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                                                <!--[if mso]><i style="letter-spacing: 36px; mso-font-width: -100%; mso-text-raise: 30pt;">&nbsp;</i><![endif]-->
+                                                <span style="mso-text-raise: 15pt;">Verify Email Address &rarr;</span>
+                                                <!--[if mso]><i style="letter-spacing: 36px; mso-font-width: -100%;">&nbsp;</i><![endif]-->
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+
+                        <!-- Divider -->
+                        <tr>
+                            <td style="padding: 0 40px;">
+                                <hr style="border: 0; height: 1px; background-color: #e2e8f0;">
+                            </td>
+                        </tr>
+
+                        <!-- "What's Next" Section -->
+                        <tr>
+                            <td style="padding: 32px 40px;">
+                                <h2 style="margin: 0 0 24px; font-size: 18px; font-weight: 500; color: #1e293b; text-align: center;">What you can do next:</h2>
+                                <table style="width: 100%;" cellpadding="0" cellspacing="0" role="presentation">
+                                    <tr>
+                                        <td style="padding-right: 10px;">
+                                            <table style="width: 100%;" cellpadding="0" cellspacing="0" role="presentation">
+                                                <tr>
+                                                    <td style="width: 32px; vertical-align: top; padding-top: 4px;"><img src="https://raw.githubusercontent.com/tabler/tabler-icons/master/packages/icons-png/64x64/layout-dashboard.png" style="width: 32px;" alt="Dashboard Icon"></td>
+                                                    <td style="padding-left: 12px;"><p style="margin: 0; font-size: 14px; color: #475569; line-height: 1.5;"><strong>Access Your Dashboard</strong><br>View your classes and assignments.</p></td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                        <td style="padding-left: 10px;">
+                                            <table style="width: 100%;" cellpadding="0" cellspacing="0" role="presentation">
+                                                <tr>
+                                                    <td style="width: 32px; vertical-align: top; padding-top: 4px;"><img src="https://raw.githubusercontent.com/tabler/tabler-icons/master/packages/icons-png/64x64/bell.png" style="width: 32px;" alt="Bell Icon"></td>
+                                                    <td style="padding-left: 12px;"><p style="margin: 0; font-size: 14px; color: #475569; line-height: 1.5;"><strong>Get Notified</strong><br>Receive important school updates.</p></td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+
                     <!-- Footer -->
-                    <tr>
-                        <td class="footer">
-                            <p>If you have any questions, feel free to contact our support team.</p>
-                            <p>Thank you for using our service!</p>
-                            <p>&copy; {{ year }} JOMUltd. All rights reserved.</p>
-                            <p>Email: <a href="mailto:jomultd2@gmail.com">jomultd2@gmail.com</a></p>
-
-
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
+                    <table style="width: 100%; max-width: 600px; margin: 0 auto;" cellpadding="0" cellspacing="0" role="presentation">
+                        <tr>
+                            <td style="padding: 24px 0; text-align: center;">
+                                <p style="margin: 0; font-size: 14px; color: #94a3b8;">If you did not create this account, please disregard this email.</p>
+                                <p style="margin: 16px 0 0; font-size: 14px; color: #94a3b8;">&copy; {{ year }} JOMUltd. All Rights Reserved.</p>
+                                <p style="margin: 4px 0 0; font-size: 14px; color: #94a3b8;">Contact us at <a href="mailto:jomultd2@gmail.com" style="color: #94a3b8; text-decoration: underline;">jomultd2@gmail.com</a></p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </div>
 </body>
 </html>

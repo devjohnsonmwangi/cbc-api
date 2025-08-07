@@ -4,6 +4,7 @@ import { InvoicesController } from './invoices.controller';
 import { InvoicesService } from './invoices.service';
 import { StudentsModule } from '../students/students.module';
 import { TermsModule } from '../terms/terms.module';
+import { UserModule } from '../users/users.module';
 import { FeeStructuresModule } from '../fee-structures/fee-structures.module';
 import { StudentEnrollmentsModule } from '../student-enrollment/student-enrollment.module';
 
@@ -18,6 +19,8 @@ import { StudentEnrollmentsModule } from '../student-enrollment/student-enrollme
     TermsModule,              // Provides TermService
     FeeStructuresModule,      // Provides FeeStructuresService
     StudentEnrollmentsModule, // Provides StudentEnrollmentsService
+    //USER
+    UserModule,               // Provides UsersService
   ],
   controllers: [InvoicesController],
   providers: [InvoicesService],

@@ -23,8 +23,8 @@ import Joi from 'joi';
 // --- Domain and infrastructure modules ---
 import { DrizzleModule } from './drizzle/drizzle.module';
 import { HealthModule } from './health/health.module';
-import { PlansModule } from './plans/plans.module';
-import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { PlansModule } from './platform-billing/plans/plans.module';
+import { SubscriptionsModule } from './platform-billing/subscriptions/subscriptions.module';
 import { SchoolConfigurationModule } from './school-configurations/school-configurations.module';
 import { AuthModule } from './auth/auth.module';
 import { SecurityModule } from './security/security.module';
@@ -46,7 +46,7 @@ import { AssignmentsModule } from './assignments/assignments.module';
 import { AssessmentsModule } from './assessments/assessments.module';
 import { QuizzesModule } from './quizzes/quizzes.module';
 import { FinanceModule } from './finance/finance.module';
-import { PaymentsModule } from './payments/payments.module';
+//import { PaymentsModule } from './payments/payments.module';
 import { GovernanceModule } from './governance/governance.module';
 import { MeetingsModule } from './meetings/meetings.module';
 import { VenuesModule } from './venues/venues.module';
@@ -67,9 +67,11 @@ import { CourseModulesModule } from './course-modules/course-modules.module';
 import { LessonContentsModule } from './lesson-contents/lesson-contents.module';
 import { FeeStructuresModule } from './fee-structures/fee-structures.module';
 import { InvoicesModule } from './invoices/invoices.module';
+import { PlatformInvoicesModule } from './platform-billing/platform-invoices/platform-invoices.module';
 
 // --- Guards ---
 import { AuthGuard } from './auth/guards/access-token.guard';
+import { platform } from 'os';
 
 @Module({
   imports: [
@@ -162,7 +164,7 @@ import { AuthGuard } from './auth/guards/access-token.guard';
     AssessmentsModule,
     QuizzesModule,
     FinanceModule,
-    PaymentsModule,
+    //PaymentsModule,
     GovernanceModule,
     MeetingsModule,
     VenuesModule,
@@ -191,6 +193,10 @@ import { AuthGuard } from './auth/guards/access-token.guard';
     FeeStructuresModule,
     //invoices module
     InvoicesModule,
+    //platform billing modules
+    PlatformInvoicesModule,
+    PlansModule,
+    SubscriptionsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
