@@ -42,7 +42,7 @@ POST {{baseUrl}}/auth/forgot-password
 Content-Type: application/json
 
 {
-  "email": "john.doe@example.com"
+  "email": "johnsonthuraniramwangi@gmail.com"
 }
 
 

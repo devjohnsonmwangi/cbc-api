@@ -739,7 +739,7 @@ export const auditLogTable = pgTable("auditLogTable", {
 export const passwordResetTokenTable = pgTable("passwordResetTokenTable", {
   id: serial("id").primaryKey(),
   token: varchar("token", { length: 255 }).notNull().unique(),
-  user_id: integer("user_id").notNull().references(() => userTable.user_id, { onDelete: "cascade" }),
+  user_id: integer("user_id").notNull().unique().references(() => userTable.user_id, { onDelete: "cascade" }),
   expires_at: timestamp("expires_at", { withTimezone: true }).notNull(),
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
