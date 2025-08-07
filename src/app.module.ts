@@ -44,7 +44,7 @@ import { SubjectsModule } from './subjects/subjects.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { AssignmentsModule } from './assignments/assignments.module';
 import { AssessmentsModule } from './assessments/assessments.module';
-import { LmsModule } from './lms/lms.module';
+import { QuizzesModule } from './quizzes/quizzes.module';
 import { FinanceModule } from './finance/finance.module';
 import { PaymentsModule } from './payments/payments.module';
 import { GovernanceModule } from './governance/governance.module';
@@ -65,6 +65,8 @@ import { SubjectRequirementsModule } from './subject-requirements/subject-requir
 import { CoursesModule } from './courses/courses.module';
 import { CourseModulesModule } from './course-modules/course-modules.module';
 import { LessonContentsModule } from './lesson-contents/lesson-contents.module';
+import { FeeStructuresModule } from './fee-structures/fee-structures.module';
+import { InvoicesModule } from './invoices/invoices.module';
 
 // --- Guards ---
 import { AuthGuard } from './auth/guards/access-token.guard';
@@ -158,7 +160,7 @@ import { AuthGuard } from './auth/guards/access-token.guard';
     EnrollmentsModule,
     AssignmentsModule,
     AssessmentsModule,
-    LmsModule,
+    QuizzesModule,
     FinanceModule,
     PaymentsModule,
     GovernanceModule,
@@ -185,6 +187,10 @@ import { AuthGuard } from './auth/guards/access-token.guard';
     CourseModulesModule,
     //lesson contents module
     LessonContentsModule,
+    //fee structures module
+    FeeStructuresModule,
+    //invoices module
+    InvoicesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
