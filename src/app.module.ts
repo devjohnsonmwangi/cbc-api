@@ -25,7 +25,7 @@ import { DrizzleModule } from './drizzle/drizzle.module';
 import { HealthModule } from './health/health.module';
 import { PlansModule } from './plans/plans.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
-import { ConfigurationsModule } from './configurations/configurations.module';
+import { SchoolConfigurationModule } from './school-configurations/school-configurations.module';
 import { AuthModule } from './auth/auth.module';
 import { SecurityModule } from './security/security.module';
 import { SchoolModule } from './schools/schools.module';
@@ -141,7 +141,7 @@ import { AuthGuard } from './auth/guards/access-token.guard';
     // =========================================================================
     PlansModule,
     SubscriptionsModule,
-    ConfigurationsModule,
+    SchoolConfigurationModule,
     AuthModule,
     SecurityModule,
     SchoolModule,
