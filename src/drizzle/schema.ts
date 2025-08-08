@@ -715,6 +715,7 @@ export const eventTable = pgTable("eventTable", {
   event_type: eventTypeEnum("event_type").notNull(),
   title: varchar("title").notNull(),
   description: text("description"),
+    location: varchar("location", { length: 255 }),
   start_time: timestamp("start_time", { withTimezone: true }).notNull(),
   end_time: timestamp("end_time", { withTimezone: true }),
   created_by_user_id: integer("created_by_user_id").references(() => userTable.user_id, { onDelete: "set null" }),
@@ -784,6 +785,7 @@ export const announcementTable = pgTable("announcementTable", {
     channels: jsonb("channels").$type<Array<typeof announcementChannelEnum.enumValues>>().notNull(),
     scheduled_for: timestamp("scheduled_for", { withTimezone: true }).defaultNow(),
     sent_at: timestamp("sent_at", { withTimezone: true }),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
     archived_at: timestamp("archived_at", { withTimezone: true }),
 });
 

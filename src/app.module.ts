@@ -68,6 +68,8 @@ import { LessonContentsModule } from './lesson-contents/lesson-contents.module';
 import { FeeStructuresModule } from './fee-structures/fee-structures.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { PlatformInvoicesModule } from './platform-billing/platform-invoices/platform-invoices.module';
+import { AnnouncementsModule } from './communication/announcements/announcements.module';
+import { EventRemindersModule } from './communication/event-reminders/event-reminders.module';
 
 // --- Guards ---
 import { AuthGuard } from './auth/guards/access-token.guard';
@@ -197,6 +199,11 @@ import { platform } from 'os';
     PlatformInvoicesModule,
     PlansModule,
     SubscriptionsModule,
+    //communication modules
+    // Event Reminders Module
+    EventRemindersModule,
+    //announcements module
+    AnnouncementsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
