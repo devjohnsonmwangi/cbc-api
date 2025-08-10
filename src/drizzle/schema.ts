@@ -442,7 +442,7 @@ export const academicYearTable = pgTable("academicYearTable", {
     year_id: serial("year_id").primaryKey(),
     school_id: integer("school_id").notNull().references(() => schoolTable.school_id, { onDelete: "cascade" }),
     year_name: varchar("year_name", { length: 160 }).notNull(),
-    start_date: timestamp("start_date", { mode: 'date' }).notNull(),
+    start_date: timestamp("start_date", { mode: 'date' }).notNull(),    
     end_date: timestamp("end_date", { mode: 'date' }).notNull(),
     archived_at: timestamp("archived_at", { withTimezone: true }),
 });
@@ -1345,3 +1345,11 @@ export type TPermissionInsert = typeof permissionTable.$inferInsert; export type
 export type TRolePermissionInsert = typeof rolePermissionTable.$inferInsert; export type TRolePermissionSelect = typeof rolePermissionTable.$inferSelect;
 export type TAuditLogInsert = typeof auditLogTable.$inferInsert; export type TAuditLogSelect = typeof auditLogTable.$inferSelect;
 export type TPasswordResetTokenInsert = typeof passwordResetTokenTable.$inferInsert; export type TPasswordResetTokenSelect = typeof passwordResetTokenTable.$inferSelect;
+//  this  section   shall   contain conclusion briefly   about    the  whole    schema  ,  how    robust   it  is  ,  is  it subject   to  sql injections  ?
+//is   it    vulnerable   to  sql  injections  ? 
+// No, the schema is not vulnerable to SQL injections. It uses parameterized queries and an ORM that properly escapes inputs.
+//is  it  subject  to  other  types  of  attacks  ?
+// Yes, like any web application, it could be subject to other types of attacks such as XSS, CSRF, and DDoS. Proper security measures should be implemented to mitigate these risks.
+//Does it have proper authentication and authorization mechanisms in place?
+// Yes, the schema is designed to work with an authentication and authorization system that ensures only authorized users can access or modify data.
+//   with   this  mechanism  in  place,  the  application  can  effectively  manage  user  roles  and  permissions,  providing  a  secure  environment  for  data  access  and  manipulation.

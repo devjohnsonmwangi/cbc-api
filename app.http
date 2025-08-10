@@ -72,12 +72,12 @@ Content-Type: application/json
 #### @name createSchoolAdmin
 # Create a new school admin (requires auth)
 POST {{baseUrl}}/users
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjgsImVtYWlsIjoiam9obnNvbnRodXJhbmlyYW13YW5naUBnbWFpbC5jb20iLCJzY2hvb2xfaWQiOm51bGwsInJvbGVzIjpbeyJyb2xlIjoic3VwZXJfYWRtaW4ifV0sImlhdCI6MTc1MDM0MzY4OSwiZXhwIjoxNzUwMzQ0NTg5fQ.Dd4t9Ndaj8EnJ_mQXSU_0JHmjsD6iXWr18mwKv2AVQM
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjgsImVtYWlsIjoiam9obnNvbnRodXJhbmlyYW13YW5naUBnbWFpbC5jb20iLCJzY2hvb2xfaWQiOm51bGwsInJvbGVzIjpbeyJyb2xlIjp7InJvbGVfbmFtZSI6InN1cGVyX2FkbWluIn19XSwiaWF0IjoxNzU0NzQzNDQ4LCJleHAiOjE3NTQ3NDQzNDh9.n0FKJcSPtKEVsa8aSboqq43692rBu_ALQ07eF4_Gx3M
 Content-Type: application/json
 
 {
     "full_name": "Dr. Jane Doe",
-    "email": "principal@serenevalley.ac.ke",
+    "email": "principal@serenevalleysac.ke",
     "password": "strongpassword123",
     "phone_number": "0700111222",
     "school_id": 1,
@@ -135,4 +135,38 @@ Content-Type: application/json
 {
     "email": "johnsonthuraniramwangi@gmail.com",
     "new_password": "@johnson2001mwangi"
+}
+
+//let  create   a  class  now
+#### @name createClass
+# Create a new class (requires auth)
+POST {{baseUrl}}/classes
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjgsImVtYWlsIjoiam9obnNvbnRodXJhbmlyYW13YW5naUBnbWFpbC5jb20iLCJzY2hvb2xfaWQiOm51bGwsInJvbGVzIjpbeyJyb2xlIjp7InJvbGVfbmFtZSI6InN1cGVyX2FkbWluIn19XSwiaWF0IjoxNzU0NzQyMDQ4LCJleHAiOjE3NTQ3NDI5NDh9.0rr13YDLdehXsVR9OTxzSnn5Wn-aS1QKwsql3NHmqsw
+Content-Type: application/json
+
+{
+    "name": "Mathematics",
+    "description": "An advanced mathematics class.",
+    "class_teacher_id": 1,
+    "school_id": 1,
+    "grade_level": "grade_5",
+    "stream_name": "A"
+
+}
+
+//create class_teacher
+#### @name createClassTeacher
+POST {{baseUrl}}/users
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjgsImVtYWlsIjoiam9obnNvbnRodXJhbmlyYW13YW5naUBnbWFpbC5jb20iLCJzY2hvb2xfaWQiOm51bGwsInJvbGVzIjpbeyJyb2xlIjp7InJvbGVfbmFtZSI6InN1cGVyX2FkbWluIn19XSwiaWF0IjoxNzU0NzQzNDQ4LCJleHAiOjE3NTQ3NDQzNDh9.n0FKJcSPtKEVsa8aSboqq43692rBu_ALQ07eF4_Gx3M
+Content-Type: application/json
+
+{
+    "full_name": "Mr. John Smith",
+    "email": "john.smith@serenevalley.ac.ke",
+    "password": "strongpassword123",
+    "phone_number": "0700111222",
+    "school_id": 1,
+    "roles": [
+        "teacher"
+    ]
 }

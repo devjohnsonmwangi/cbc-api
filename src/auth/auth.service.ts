@@ -1,4 +1,13 @@
-import { Injectable, UnauthorizedException, Inject, ConflictException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  Inject,
+  ConflictException,
+  BadRequestException,
+  InternalServerErrorException,
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -9,89 +18,100 @@ import { DrizzleDB } from '../drizzle/drizzle.module';
 import { DRIZZLE_ORM_TOKEN } from '../drizzle/drizzle.constants';
 import * as schema from '../drizzle/schema';
 import { TUserSelect, TUserInsert, schoolRoleEnum } from '../drizzle/schema';
-import { UserService } from '../users/users.service'; // Corrected path
+import { UserService } from '../users/users.service';
 import { MailService } from '../mailer/mailer.service';
 
 // A consistent type for the user object returned from the database with roles
-type FullUserWithRoles = TUserSelect & { roles: { role: string }[] };
+type FullUserWithRoles = TUserSelect & { roles: { role: { role_name: string } }[] };
 
 @Injectable()
 export class AuthService {
-  constructor(
-    @Inject(DRIZZLE_ORM_TOKEN) private db: DrizzleDB,
-    private userService: UserService,
-    private jwtService: JwtService,
+  private readonly logger = new Logger(AuthService.name);
 
-    private configService: ConfigService,
-    private mailService: MailService,
+  constructor(
+    @Inject(DRIZZLE_ORM_TOKEN) private readonly database: DrizzleDB,
+    private readonly userService: UserService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+    private readonly mailService: MailService,
   ) {
-    // A quick check during startup in development to ensure secrets are loaded.
     if (process.env.NODE_ENV !== 'production') {
-        if (!configService.get<string>('JWT_SECRET') || !configService.get<string>('JWT_REFRESH_SECRET')) {
-            console.error('FATAL ERROR: JWT secrets are not loaded. Check your .env file and ConfigModule setup.');
-            process.exit(1);
-        }
+      if (
+        !this.configService.get<string>('JWT_SECRET') ||
+        !this.configService.get<string>('JWT_REFRESH_SECRET')
+      ) {
+        this.logger.error(
+          'FATAL ERROR: JWT secrets are not loaded. Check your .env file and ConfigModule setup.',
+        );
+        process.exit(1);
+      }
     }
   }
 
   /**
-   * Handles public user registration.
-   * The first user to ever register automatically becomes a 'super_admin'.
-   * All subsequent users receive a default role (e.g., 'parent').
-   * @param registerDto Data for the new user (name, email, password).
+   * Handles public user registration. The first user becomes a 'super_admin'.
+   * @param registrationData Data for the new user (name, email, password).
    */
-  async register(registerDto: Omit<TUserInsert, 'id' | 'roles' | 'school_id'>) {
-    const existingUser = await this.userService.findOneByEmail(registerDto.email);
+  async register(registrationData: Omit<TUserInsert, 'id' | 'roles' | 'school_id'>) {
+    const existingUser = await this.userService.findOneByEmail(registrationData.email);
     if (existingUser) {
-      throw new ConflictException('A user with this email already exists.');
+      throw new ConflictException(`A user with the email '${registrationData.email}' already exists.`);
     }
 
-    const [userCountResult] = await this.db.select({ count: sql<number>`count(*)` }).from(schema.userTable);
+    const [userCountResult] = await this.database.select({ count: sql<number>`count(*)` }).from(schema.userTable);
     const isFirstUser = Number(userCountResult.count) === 0;
 
     const rolesToAssign: (typeof schoolRoleEnum.enumValues)[number][] = isFirstUser ? ['super_admin'] : ['parent'];
 
-    const userToCreate = { 
-      ...registerDto,
+    const userToCreate = {
+      ...registrationData,
       roles: rolesToAssign,
-      phone_number: registerDto.phone_number || undefined,
+      phone_number: registrationData.phone_number || undefined,
     };
 
     const newUser = await this.userService.create(userToCreate, rolesToAssign);
-    
-    // In a real app, you would also store this token and have a verification flow.
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    const verificationUrl = `${this.configService.get('FRONTEND_URL')}/verify-email?token=${verificationToken}`;
-    
+
     await this.mailService.sendWelcomeEmail(newUser);
 
     return { message: `Registration successful for ${newUser.email}. Please check your email to get started.` };
   }
-  
+
   /**
-   * Validates user credentials against the database.
+   * [SECURE] Validates user credentials with a generic error message to prevent user enumeration.
    * @param email The user's email.
-   * @param pass The plain-text password provided by the user.
+   * @param password The plain-text password provided by the user.
    * @returns The full user object with roles if credentials are valid.
-   * @throws UnauthorizedException if credentials are invalid.
+   * @throws UnauthorizedException for any failure (email not found OR wrong password).
    */
-  async validateUser(email: string, pass: string): Promise<FullUserWithRoles> {
+  async validateUser(email: string, password: string): Promise<FullUserWithRoles> {
+    this.logger.log(`Attempting to validate user: ${email}`);
     const user = await this.userService.findOneByEmail(email);
-    if (user && (await bcrypt.compare(pass, user.password))) {
-      return user;
+
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      this.logger.warn(`Invalid login attempt for email: ${email}.`);
+      throw new UnauthorizedException('Invalid credentials. Please check your email and password.');
     }
-    throw new UnauthorizedException('Invalid credentials. Please check your email and password.');
+
+    this.logger.log(`Successfully validated user: ${email}`);
+    // Transform roles to expected structure
+    const userWithRoles: FullUserWithRoles = {
+      ...user,
+      roles: user.roles.map((r: { role: string }) => ({
+        role: { role_name: r.role }
+      }))
+    };
+    return userWithRoles;
   }
 
   /**
    * Handles the login process after a user has been validated.
-   * Generates tokens and creates/updates a user session.
    * @param user The validated user object.
    * @returns An object containing the access_token and refresh_token.
    */
   async login(user: FullUserWithRoles) {
-    const tokens = await this.getTokens(user);
+    const tokens = await this.generateTokens(user);
     await this.updateUserSession(user.user_id, tokens.refresh_token);
+    this.logger.log(`User logged in and session created for user ID: ${user.user_id}`);
     return tokens;
   }
 
@@ -100,76 +120,122 @@ export class AuthService {
    * @param userId The ID of the user to log out.
    */
   async logout(userId: number) {
-    await this.db.delete(schema.userSessionTable)
-      .where(eq(schema.userSessionTable.user_id, userId));
+    await this.database.delete(schema.userSessionTable).where(eq(schema.userSessionTable.user_id, userId));
+    this.logger.log(`User logged out and session deleted for user ID: ${userId}`);
     return { message: 'Logged out successfully' };
   }
 
   /**
    * Refreshes authentication tokens using a valid refresh token.
    * @param userId The user ID from the refresh token payload.
-   * @param rt The raw refresh token string from the client's cookie.
+   * @param refreshToken The raw refresh token string from the client.
    * @returns A new set of access and refresh tokens.
    */
-  async refreshTokens(userId: number, rt: string) {
+  async refreshTokens(userId: number, refreshToken: string) {
     const user = await this.userService.findOne(userId);
     if (!user) throw new UnauthorizedException('Access Denied: User not found.');
 
-    const session = await this.db.query.userSessionTable.findFirst({ where: eq(schema.userSessionTable.user_id, userId) });
+    const session = await this.database.query.userSessionTable.findFirst({ where: eq(schema.userSessionTable.user_id, userId) });
     if (!session || !session.token) throw new UnauthorizedException('Access Denied: No active session found.');
-    if (rt !== session.token) throw new UnauthorizedException('Access Denied: Invalid refresh token.');
-    
+    if (refreshToken !== session.token) throw new UnauthorizedException('Access Denied: Invalid refresh token.');
+
     const fullUser = await this.userService.findOneByEmail(user.email);
     if (!fullUser) {
-        throw new InternalServerErrorException('Could not refresh token for a non-existent user.');
+      throw new InternalServerErrorException('Could not refresh token for a non-existent user.');
     }
-    
-    const tokens = await this.getTokens(fullUser);
-    await this.updateUserSession(user.user_id, tokens.refresh_token);
-    return tokens;
+
+    // Transform roles to expected structure
+    const userWithRoles: FullUserWithRoles = {
+      ...fullUser,
+      roles: fullUser.roles.map((r: { role: string }) => ({
+        role: { role_name: r.role }
+      }))
+    };
+
+    const newTokens = await this.generateTokens(userWithRoles);
+    await this.updateUserSession(user.user_id, newTokens.refresh_token);
+    return newTokens;
   }
 
   /**
-   * Initiates the password reset process by generating a token and sending an email.
+   * [SECURE] Initiates the password reset process by generating a token and sending an email.
+   * It intentionally returns a generic message for non-existent emails to prevent user enumeration.
    * @param email The email of the user requesting a password reset.
    */
   async requestPasswordReset(email: string) {
     const user = await this.userService.findOneByEmail(email);
+
     if (!user) {
-      console.log(`Password reset requested for non-existent email: ${email}`);
+      this.logger.log(`Password reset requested for a non-existent email: ${email}. No action taken, returning generic success response.`);
       return { message: 'If an account with that email exists, a password reset link has been sent.' };
     }
 
     const token = crypto.randomBytes(32).toString('hex');
-    const expires_at = addMinutes(new Date(), 30);
+    const expiresAt = addMinutes(new Date(), 30); // Token is valid for 30 minutes
 
-    await this.db.insert(schema.passwordResetTokenTable)
-      .values({ user_id: user.user_id, token, expires_at })
-      .onConflictDoUpdate({ target: schema.passwordResetTokenTable.user_id, set: { token, expires_at } });
-    
-    const resetUrl = `${this.configService.get('FRONTEND_URL')}/password-reset?token=${token}`;
-    await this.mailService.sendPasswordResetEmail(user, resetUrl);
+    try {
+      await this.database.insert(schema.passwordResetTokenTable)
+        .values({ user_id: user.user_id, token, expires_at: expiresAt })
+        .onConflictDoUpdate({ target: schema.passwordResetTokenTable.user_id, set: { token, expires_at: expiresAt } });
+
+      const resetUrl = `${this.configService.get('FRONTEND_URL')}/password-reset?token=${token}`;
+      await this.mailService.sendPasswordResetEmail(user, resetUrl);
+
+      this.logger.log(`Password reset email successfully sent to user ID: ${user.user_id}`);
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`Failed to send password reset email for user ID: ${user.user_id}`, error.stack);
+      } else {
+        this.logger.error(`Failed to send password reset email for user ID: ${user.user_id}`);
+      }
+      throw new InternalServerErrorException('Could not process password reset request. Please try again later.');
+    }
     
     return { message: 'If an account with that email exists, a password reset link has been sent.' };
   }
-  
+
   /**
-   * Completes the password reset process using a valid token.
+   * Completes the password reset process using a valid token and new password.
    * @param token The password reset token from the email link.
    * @param newPassword The new password to set for the user.
    */
   async resetPassword(token: string, newPassword: string) {
-    const resetRecord = await this.db.query.passwordResetTokenTable.findFirst({ where: and(eq(schema.passwordResetTokenTable.token, token), gt(schema.passwordResetTokenTable.expires_at, new Date())) });
-    if (!resetRecord) throw new BadRequestException('Invalid or expired password reset token.');
-    
+    const resetRecord = await this.database.query.passwordResetTokenTable.findFirst({
+      where: and(eq(schema.passwordResetTokenTable.token, token), gt(schema.passwordResetTokenTable.expires_at, new Date())),
+    });
+
+    if (!resetRecord) {
+      throw new BadRequestException('This password reset link is invalid or has expired. Please request a new one.');
+    }
+
     const saltRounds = parseInt(this.configService.get<string>('PASSWORD_SALT_ROUNDS', '10'));
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
-    
-    await this.db.transaction(async (tx) => {
-        await tx.update(schema.userTable).set({ password: hashedPassword, updated_at: new Date() }).where(eq(schema.userTable.user_id, resetRecord.user_id));
-        await tx.update(schema.passwordResetTokenTable).set({ expires_at: new Date() }).where(eq(schema.passwordResetTokenTable.id, resetRecord.id));
-    });
-    return { message: 'Password has been reset successfully.' };
+
+    try {
+      await this.database.transaction(async (transaction) => {
+        const userToUpdate = await transaction.query.userTable.findFirst({ where: eq(schema.userTable.user_id, resetRecord.user_id) });
+
+        if (!userToUpdate) {
+          this.logger.warn(`Attempted to reset password for a deleted user ID: ${resetRecord.user_id}`);
+          await transaction.update(schema.passwordResetTokenTable).set({ expires_at: new Date() }).where(eq(schema.passwordResetTokenTable.id, resetRecord.id));
+          throw new NotFoundException('The user associated with this token no longer exists.');
+        }
+
+        await transaction.update(schema.userTable).set({ password: hashedPassword, updated_at: new Date() }).where(eq(schema.userTable.user_id, resetRecord.user_id));
+        await transaction.update(schema.passwordResetTokenTable).set({ expires_at: new Date() }).where(eq(schema.passwordResetTokenTable.id, resetRecord.id));
+      });
+
+      this.logger.log(`Password has been successfully reset for user ID: ${resetRecord.user_id}`);
+      return { message: 'Your password has been reset successfully.' };
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      if (error instanceof Error) {
+        this.logger.error(`Transaction failed during password reset for token: ${token}`, error.stack);
+      } else {
+        this.logger.error(`Transaction failed during password reset for token: ${token}`);
+      }
+      throw new InternalServerErrorException('An unexpected error occurred while resetting your password. Please try again.');
+    }
   }
 
   /**
@@ -177,35 +243,36 @@ export class AuthService {
    */
   private async updateUserSession(userId: number, refreshToken: string) {
     const refreshExpiryDays = parseInt(this.configService.get<string>('JWT_REFRESH_EXPIRATION_TIME', '7d').replace('d', ''));
-    const expires_at = addDays(new Date(), refreshExpiryDays);
-    await this.db.insert(schema.userSessionTable).values({ user_id: userId, token: refreshToken, expires_at }).onConflictDoUpdate({ target: schema.userSessionTable.user_id, set: { token: refreshToken, expires_at } });
+    const expiresAt = addDays(new Date(), refreshExpiryDays);
+    await this.database.insert(schema.userSessionTable)
+      .values({ user_id: userId, token: refreshToken, expires_at: expiresAt })
+      .onConflictDoUpdate({ target: schema.userSessionTable.user_id, set: { token: refreshToken, expires_at: expiresAt } });
   }
 
   /**
    * Private helper to generate new access and refresh tokens for a user.
-   * This is where the JWT secrets are used.
    */
-  private async getTokens(user: FullUserWithRoles) {
-    const payload = { 
-      sub: user.user_id, 
-      email: user.email, 
-      school_id: user.school_id, 
-      roles: user.roles 
+  private async generateTokens(user: FullUserWithRoles) {
+    const payload = {
+      sub: user.user_id,
+      email: user.email,
+      school_id: user.school_id,
+      roles: user.roles,
     };
-    
-    const accessSecret = this.configService.get<string>('JWT_SECRET');
-    const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
+
+    const accessTokenSecret = this.configService.get<string>('JWT_SECRET');
+    const refreshTokenSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
 
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, { 
-        secret: accessSecret, 
-        expiresIn: this.configService.get<string>('JWT_ACCESS_EXPIRATION_TIME', '15m') 
+      this.jwtService.signAsync(payload, {
+        secret: accessTokenSecret,
+        expiresIn: this.configService.get<string>('JWT_ACCESS_EXPIRATION_TIME', '15m'),
       }),
-      this.jwtService.signAsync({ sub: user.user_id }, { 
-        secret: refreshSecret, 
-        expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRATION_TIME', '7d') 
+      this.jwtService.signAsync({ sub: user.user_id }, {
+        secret: refreshTokenSecret,
+        expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRATION_TIME', '7d'),
       }),
     ]);
-    return { access_token: accessToken, refresh_token: refreshToken };
-  }
-}
+
+    return { access_token: accessToken, refresh_token: refreshToken };    }
+} 
